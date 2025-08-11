@@ -1,7 +1,7 @@
 import { getPracticeDetails, analyzePracticeReviews } from '@/app/actions';
 import Header from '@/components/Header';
 import PracticeAnalysis from '@/components/PracticeAnalysis';
-import { SentimentBatchResult, MultilabelBatchResult, AggregatedResults } from '@/lib/types';
+import { SentimentBatchResult, MultilabelBatchResult, AggregatedResults, PageProps } from '@/lib/types';
 
 function aggregateResults(sentimentResults: SentimentBatchResult, multilabelResults: MultilabelBatchResult): AggregatedResults {
     const sentimentCounts: { [key: string]: number } = {};
@@ -21,8 +21,9 @@ function aggregateResults(sentimentResults: SentimentBatchResult, multilabelResu
     return { sentimentCounts, labelCounts };
 }
 
-export default async function PracticeAnalysisPage({ params }: { params: { place_id: string } }) {
-    const practiceDetails = await getPracticeDetails(params.place_id);
+export default async function PracticeAnalysisPage({ params }: PageProps) {
+    const place_id = params.place_id as string;
+    const practiceDetails = await getPracticeDetails(place_id);
     const reviews = practiceDetails.reviews || [];
     const analysisResults = await analyzePracticeReviews(reviews);
     const aggregatedResults = aggregateResults(analysisResults.sentimentBatchResults, analysisResults.multilabelBatchResults);
