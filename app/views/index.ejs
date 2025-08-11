@@ -1,9 +1,47 @@
-<link rel="stylesheet" href="/public/style.css">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DELIVER - Dental Feedback Analysis</title>
+    <link rel="stylesheet" href="/public/style.css">
 </head>
-<body>
-    <header>
-        <div class="logo-container">
-            <img src="/public/Deliver.svg" alt="Deliver Logo" class="logo">
-            <img src="/public/EU_logo.svg" alt="EU Logo" class="logo">
-            <img src="/public/manchester_logo.png" alt="Manchester Logo" class="logo">
-        </div>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12">
+            <div class="flex justify-center items-center gap-4 mb-4">
+                <img src="/public/Deliver.svg" alt="Deliver Logo" class="h-12">
+                <img src="/public/EU_logo.svg" alt="EU Logo" class="h-12">
+                <img src="/public/manchester_logo.png" alt="Manchester Logo" class="h-12">
+            </div>
+            <h1 class="text-5xl font-bold text-blue-600 mb-2">Welcome to DELIVER</h1>
+            <p class="text-lg text-gray-600">Your AI-powered dental feedback analysis tool.</p>
+        </header>
+
+        <main class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div class="bg-white p-8 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="/public/tooth.svg" alt="Tooth Icon" class="h-8 w-8 text-blue-500">
+                    <h2 class="text-2xl font-semibold text-gray-700">Analyse a Single Review</h2>
+                </div>
+                <p class="mb-6 text-gray-600">Get in-depth insights from a single patient review.</p>
+                <a href="/practice_search" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-300">Get Started</a>
+            </div>
+            <div class="bg-white p-8 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="/public/tooth.svg" alt="Tooth Icon" class="h-8 w-8 text-green-500">
+                    <h2 class="text-2xl font-semibold text-gray-700">Analyse Google Maps Reviews</h2>
+                </div>
+                <p class="mb-6 text-gray-600">Analyse all Google Maps reviews for a dental practice.</p>
+                <a href="/practice_search" class="bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors duration-300">Get Started</a>
+            </div>
+        </main>
+
+        <footer class="text-center mt-12 text-gray-500">
+            <p>&copy; 2024 DELIVER. All rights reserved.</p>
+        </footer>
+    </div>
+
+</body>
+</html>

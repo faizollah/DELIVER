@@ -1,27 +1,36 @@
-const mysql = require('mysql');
+const { Pool } = require('pg');
 const config = require('../config');
 
-function logAnalysis(text, sentiment, confidence) {
-    return new Promise((resolve, reject) => {
-        const connection = mysql.createConnection(config.dbConfig);
-        connection.connect((err) => {
-            if (err) {
-                console.error('Database connection failed:', err.stack);
-                return reject(err);
-            }
-            const query = 'INSERT INTO sentiment_logs (input_text, sentiment, confidence) VALUES (?, ?, ?)';
-            connection.query(query, [text, sentiment, confidence], (error, results) => {
-                connection.end(); // End connection in both cases
-                if (error) {
-                    console.error('Error logging to database:', error);
-                    return reject(error);
-                }
-                resolve(results);
-            });
-        });
-    });
+const pool = new Pool(config.dbConfig);
+
+async function ensureTableExists() {
+    const client = await pool.connect();
+    try {
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS sentiment_logs (
+                id SERIAL PRIMARY KEY,
+                input_text TEXT NOT NULL,
+                sentiment VARCHAR(255) NOT NULL,
+                confidence REAL NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+    } finally {
+        client.release();
+    }
+}
+
+async function logAnalysis(text, sentiment, confidence) {
+    const client = await pool.connect();
+    try {
+        const query = 'INSERT INTO sentiment_logs (input_text, sentiment, confidence) VALUES ($1, $2, $3)';
+        await client.query(query, [text, sentiment, confidence]);
+    } finally {
+        client.release();
+    }
 }
 
 module.exports = {
+    ensureTableExists,
     logAnalysis
 };

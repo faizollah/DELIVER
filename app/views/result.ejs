@@ -6,43 +6,38 @@
     <title>Analysis Result - DELIVER</title>
     <link rel="stylesheet" href="/public/style.css">
 </head>
-<body>
-    <header>
-        <div class="logo-container">
-            <img src="/public/Deliver.svg" alt="Deliver Logo" class="logo">
-            <img src="/public/EU_logo.svg" alt="EU Logo" class="logo">
-            <img src="/public/manchester_logo.png" alt="Manchester Logo" class="logo">
-        </div>
-        <h1>Analysis Result</h1>
-    </header>
+<body class="bg-gray-50 font-sans text-gray-800">
 
-    <main>
-        <div class="result-container">
-            <h2>Single Review Analysis</h2>
-            <div class="review">
-                <h3>Original Review:</h3>
-                <p>"<%= text %>"</p>
-            </div>
-            <div class="analysis">
-                <h3>Sentiment:</h3>
-                <p class="sentiment-<%= sentimentResult.sentiment.toLowerCase() %>"><%= sentimentResult.sentiment %></p>
-                <h3>Themes:</h3>
-                <ul>
-                    <% multilabelResult.predicted_labels.forEach(label => { %>
-                        <li><%= label %></li>
-                    <% }); %>
-                </ul>
-                <h3>Sentiment Chart:</h3>
-                <img src="<%= charts.sentimentImage %>" alt="Sentiment Chart">
-                <h3>Multilabel Chart:</h3>
-                <img src="<%= charts.multilabelImage %>" alt="Multilabel Chart">
-            </div>
-            <a href="/" class="btn">Analyze Another Review</a>
-        </div>
-    </main>
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12">
+            <a href="/analysis" class="text-blue-600 hover:underline mb-4 inline-block">&larr; Back to Analysis Hub</a>
+            <h1 class="text-5xl font-bold text-blue-600 mb-2">Analysis Result</h1>
+        </header>
 
-    <footer>
-        <p>&copy; 2024 DELIVER. All rights reserved.</p>
-    </footer>
+        <main class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
+            <div class="mb-8">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Original Review:</h2>
+                <p class="text-gray-600 p-4 border rounded-lg bg-gray-50">"<%= text %>"</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Sentiment:</h3>
+                    <p class="text-2xl font-bold <%= sentimentResult.sentiment === 'Positive' ? 'text-green-500' : 'text-red-500' %>"><%= sentimentResult.sentiment %></p>
+                    <img src="<%= charts.sentimentImage %>" alt="Sentiment Chart" class="mt-4 rounded-lg shadow-sm">
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Themes:</h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <% multilabelResult.predicted_labels.forEach(label => { %>
+                            <li class="text-gray-600"><%= label %></li>
+                        <% }); %>
+                    </ul>
+                    <img src="<%= charts.multilabelImage %>" alt="Multilabel Chart" class="mt-4 rounded-lg shadow-sm">
+                </div>
+            </div>
+        </main>
+    </div>
+
 </body>
 </html>

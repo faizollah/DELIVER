@@ -6,47 +6,41 @@
     <title>Practice Analysis Results - DELIVER</title>
     <link rel="stylesheet" href="/public/style.css">
 </head>
-<body>
-    <header>
-        <div class="logo-container">
-            <img src="/public/Deliver.svg" alt="Deliver Logo" class="logo">
-            <img src="/public/EU_logo.svg" alt="EU Logo" class="logo">
-            <img src="/public/manchester_logo.png" alt="Manchester Logo" class="logo">
-        </div>
-        <h1>Practice Analysis Results</h1>
-    </header>
+<body class="bg-gray-50 font-sans text-gray-800">
 
-    <main>
-        <div class="result-container">
-            <h2><%= practice_name %> - Analysis</h2>
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12">
+            <a href="/practice_search" class="text-blue-600 hover:underline mb-4 inline-block">&larr; Back to Search</a>
+            <h1 class="text-5xl font-bold text-blue-600 mb-2"><%= practice_name %> - Analysis</h1>
+        </header>
+
+        <main class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
             <% if (typeof error_message !== 'undefined') { %>
-                <p class="error"><%= error_message %></p>
+                <p class="text-red-500 text-center"><%= error_message %></p>
             <% } else { %>
-                <div class="summary">
-                    <h3>Overall Sentiment:</h3>
-                    <ul>
-                        <% Object.entries(aggregatedResults.sentimentCounts).forEach(([sentiment, count]) => { %>
-                            <li><%= sentiment %>: <%= count %></li>
-                        <% }); %>
-                    </ul>
-                    <h3>Key Themes:</h3>
-                    <ul>
-                        <% Object.entries(aggregatedResults.labelCounts).forEach(([label, count]) => { %>
-                            <li><%= label %>: <%= count %></li>
-                        <% }); %>
-                    </ul>
-                    <h3>Sentiment Distribution:</h3>
-                    <img src="<%= charts.sentimentImage %>" alt="Sentiment Distribution">
-                    <h3>Common Topics:</h3>
-                    <img src="<%= charts.multilabelImage %>" alt="Common Topics">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Overall Sentiment:</h3>
+                        <ul class="list-disc list-inside space-y-2">
+                            <% Object.entries(aggregatedResults.sentimentCounts).forEach(([sentiment, count]) => { %>
+                                <li class="text-gray-600"><%= sentiment %>: <%= count %></li>
+                            <% }); %>
+                        </ul>
+                        <img src="<%= charts.sentimentImage %>" alt="Sentiment Distribution" class="mt-4 rounded-lg shadow-sm">
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Key Themes:</h3>
+                        <ul class="list-disc list-inside space-y-2">
+                            <% Object.entries(aggregatedResults.labelCounts).forEach(([label, count]) => { %>
+                                <li class="text-gray-600"><%= label %>: <%= count %></li>
+                            <% }); %>
+                        </ul>
+                        <img src="<%= charts.multilabelImage %>" alt="Common Topics" class="mt-4 rounded-lg shadow-sm">
+                    </div>
                 </div>
             <% } %>
-            <a href="/practice_search.html" class="btn">Analyze Another Practice</a>
-        </div>
-    </main>
+        </main>
+    </div>
 
-    <footer>
-        <p>&copy; 2024 DELIVER. All rights reserved.</p>
-    </footer>
 </body>
 </html>

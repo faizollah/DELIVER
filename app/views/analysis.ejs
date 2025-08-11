@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyze - DELIVER</title>
+    <link rel="stylesheet" href="/public/style.css">
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12">
+            <a href="/" class="text-blue-600 hover:underline mb-4 inline-block">&larr; Back to Home</a>
+            <h1 class="text-5xl font-bold text-blue-600 mb-2">Analysis Hub</h1>
+            <p class="text-lg text-gray-600">Analyze a single review or search for a dental practice.</p>
+        </header>
+
+        <main class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div class="bg-white p-8 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Analyze a Single Review</h2>
+                <form action="/analyze" method="POST">
+                    <textarea name="text" rows="5" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-200" placeholder="e.g., 'The staff was friendly but I had to wait a long time...'"></textarea>
+                    <button type="submit" class="w-full mt-4 bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-300">Analyze</button>
+                </form>
+            </div>
+            <div class="bg-white p-8 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Analyze a Dental Practice</h2>
+                <form action="/search" method="POST">
+                    <input type="text" name="query" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-shadow duration-200" placeholder="e.g., 'dentist in Manchester'">
+                    <button type="submit" class="w-full mt-4 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors duration-300">Search</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>
