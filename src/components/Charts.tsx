@@ -90,7 +90,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
       tooltip: {
         callbacks: {
           label: (ctx: TooltipItem<'bar'>) =>
-            `${ctx.parsed.x !== undefined ? (ctx.parsed.x * 100).toFixed(1) : ctx.parsed}%`;
+            `${ctx.parsed.x !== undefined ? (ctx.parsed.x * 100).toFixed(1) : ctx.parsed}%`,
         },
       },
       title: {
