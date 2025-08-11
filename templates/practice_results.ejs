@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice Analysis Results - DELIVER</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="/Deliver.svg" alt="Deliver Logo" class="logo">
+            <img src="/EU_logo.svg" alt="EU Logo" class="logo">
+            <img src="/manchester_logo.png" alt="Manchester Logo" class="logo">
+        </div>
+        <h1>Practice Analysis Results</h1>
+    </header>
+
+    <main>
+        <div class="result-container">
+            <h2><%= practice_name %> - Analysis</h2>
+            <% if (typeof error_message !== 'undefined') { %>
+                <p class="error"><%= error_message %></p>
+            <% } else { %>
+                <div class="summary">
+                    <h3>Overall Sentiment:</h3>
+                    <ul>
+                        <% Object.entries(aggregatedResults.sentimentCounts).forEach(([sentiment, count]) => { %>
+                            <li><%= sentiment %>: <%= count %></li>
+                        <% }); %>
+                    </ul>
+                    <h3>Key Themes:</h3>
+                    <ul>
+                        <% Object.entries(aggregatedResults.labelCounts).forEach(([label, count]) => { %>
+                            <li><%= label %>: <%= count %></li>
+                        <% }); %>
+                    </ul>
+                    <h3>Sentiment Distribution:</h3>
+                    <img src="<%= charts.sentimentImage %>" alt="Sentiment Distribution">
+                    <h3>Common Topics:</h3>
+                    <img src="<%= charts.multilabelImage %>" alt="Common Topics">
+                </div>
+            <% } %>
+            <a href="/practice_search.html" class="btn">Analyze Another Practice</a>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 DELIVER. All rights reserved.</p>
+    </footer>
+</body>
+</html>

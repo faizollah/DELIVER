@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Result - DELIVER</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="/Deliver.svg" alt="Deliver Logo" class="logo">
+            <img src="/EU_logo.svg" alt="EU Logo" class="logo">
+            <img src="/manchester_logo.png" alt="Manchester Logo" class="logo">
+        </div>
+        <h1>Analysis Result</h1>
+    </header>
+
+    <main>
+        <div class="result-container">
+            <h2>Single Review Analysis</h2>
+            <div class="review">
+                <h3>Original Review:</h3>
+                <p>"<%= text %>"</p>
+            </div>
+            <div class="analysis">
+                <h3>Sentiment:</h3>
+                <p class="sentiment-<%= sentimentResult.sentiment.toLowerCase() %>"><%= sentimentResult.sentiment %></p>
+                <h3>Themes:</h3>
+                <ul>
+                    <% multilabelResult.predicted_labels.forEach(label => { %>
+                        <li><%= label %></li>
+                    <% }); %>
+                </ul>
+                <h3>Sentiment Chart:</h3>
+                <img src="<%= charts.sentimentImage %>" alt="Sentiment Chart">
+                <h3>Multilabel Chart:</h3>
+                <img src="<%= charts.multilabelImage %>" alt="Multilabel Chart">
+            </div>
+            <a href="/" class="btn">Analyze Another Review</a>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 DELIVER. All rights reserved.</p>
+    </footer>
+</body>
+</html>

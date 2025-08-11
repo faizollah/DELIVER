@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - DELIVER</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="/Deliver.svg" alt="Deliver Logo" class="logo">
+            <img src="/EU_logo.svg" alt="EU Logo" class="logo">
+            <img src="/manchester_logo.png" alt="Manchester Logo" class="logo">
+        </div>
+        <h1>Search Results</h1>
+    </header>
+
+    <main>
+        <div class="results-container">
+            <% if (practices.length > 0) { %>
+                <h2>Select a practice to analyze:</h2>
+                <ul>
+                    <% practices.forEach(practice => { %>
+                        <li>
+                            <a href="/analyze_practice/<%= practice.place_id %>">
+                                <h3><%= practice.name %></h3>
+                                <p><%= practice.address %></p>
+                                <p>Rating: <%= practice.rating %> (<%= practice.user_ratings_total %> reviews)</p>
+                            </a>
+                        </li>
+                    <% }); %>
+                </ul>
+            <% } else { %>
+                <p>No practices found for your search.</p>
+            <% } %>
+            <a href="/practice_search.html" class="btn">New Search</a>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 DELIVER. All rights reserved.</p>
+    </footer>
+</body>
+</html>
