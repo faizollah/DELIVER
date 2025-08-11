@@ -21,7 +21,7 @@ function aggregateResults(sentimentResults: SentimentBatchResult, multilabelResu
     return { sentimentCounts, labelCounts };
 }
 
-export default async function PracticeAnalysisPage({ params }: { params: { place_id: string } }) {
+export default async function PracticeAnalysisPage({ params }: any) {
     const practiceDetails = await getPracticeDetails(params.place_id);
     const reviews = practiceDetails.reviews || [];
     const analysisResults = await analyzePracticeReviews(reviews);
