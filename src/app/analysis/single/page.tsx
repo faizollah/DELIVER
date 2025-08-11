@@ -1,12 +1,13 @@
 'use client';
 import Header from '@/components/Header';
 import { useState } from 'react';
+import { SentimentPie, TopicsBar } from '@/components/Charts';
 
 export default function SingleReviewPage() {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ sentiment: string; confidence: number; topics: string[] } | null>(null);
+  const [result, setResult] = useState<{ sentiment: string; confidence: number; topics: string[]; probs?: Record<string, number> } | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,6 +24,7 @@ export default function SingleReviewPage() {
         sentiment: payload.sentimentResult.sentiment,
         confidence: payload.sentimentResult.confidence,
         topics: payload.multilabelResult.predicted_labels,
+        probs: payload.multilabelResult.all_probabilities,
       });
     } catch {
       setError('Sorry, something went wrong analysing this text. Please try again.');
@@ -57,9 +59,15 @@ export default function SingleReviewPage() {
           </form>
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
           {result && (
-            <div className="mt-6 rounded-xl border border-slate-200/70 bg-white/80 p-4">
-              <p className="text-slate-800"><span className="font-semibold">Sentiment:</span> {result.sentiment} ({(result.confidence*100).toFixed(1)}%)</p>
-              <p className="mt-2 text-slate-800"><span className="font-semibold">Key themes:</span> {result.topics.slice(0,5).join(', ')}</p>
+            <div className="mt-6 space-y-4">
+              <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4">
+                <p className="text-slate-800"><span className="font-semibold">Sentiment:</span> {result.sentiment} ({(result.confidence*100).toFixed(1)}%)</p>
+                <p className="mt-2 text-slate-800"><span className="font-semibold">Top themes:</span> {result.topics.slice(0,5).join(', ')}</p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <SentimentPie label={result.sentiment} confidence={result.confidence} />
+                {result.probs && <TopicsBar probs={result.probs} />}
+              </div>
             </div>
           )}
         </div>
