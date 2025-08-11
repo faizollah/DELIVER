@@ -10,10 +10,10 @@ export default function HomePage() {
       </div>
 
       <header className="container mx-auto px-6 pt-10">
-        <div className="flex items-center gap-4">
-          <Image src="/Deliver.png" alt="Deliver" width={90} height={28} />
-          <Image src="/EU_logo.png" alt="EU" width={70} height={24} />
-          <Image src="/manchester_logo.png" alt="Manchester" width={100} height={30} />
+        <div className="flex items-center gap-6">
+          <Image src="/Deliver.png" alt="Deliver" width={120} height={38} />
+          <Image src="/EU_logo.png" alt="EU" width={90} height={30} />
+          <Image src="/manchester_logo.png" alt="Manchester" width={140} height={42} />
         </div>
       </header>
 
@@ -34,20 +34,14 @@ export default function HomePage() {
                 href="/analysis/single"
                 className="rounded-full bg-sky-600 px-6 py-3 font-semibold text-white shadow-lg shadow-sky-600/20 transition hover:shadow-xl hover:brightness-110"
               >
-                Analyze a Single Review
+                Analyse a Single Review
               </Link>
               <Link
                 href="/analysis/practice"
                 className="rounded-full border border-slate-200/70 bg-white/60 px-6 py-3 font-semibold text-slate-800 backdrop-blur transition hover:bg-white"
               >
-                Analyze Practice Reviews
+                Analyse Practice Reviews
               </Link>
-            </div>
-
-            <div className="mt-10 flex items-center gap-6 opacity-80">
-              <Image src="/Deliver.png" alt="Deliver" width={80} height={26} />
-              <Image src="/EU_logo.png" alt="EU" width={60} height={22} />
-              <Image src="/manchester_logo.png" alt="Manchester" width={90} height={28} />
             </div>
           </div>
 
@@ -62,13 +56,13 @@ export default function HomePage() {
         <section className="mx-auto mt-16 grid max-w-7xl gap-6 md:grid-cols-2">
           <Link href="/analysis/single" className="group rounded-2xl border border-white/10 bg-white/70 p-6 shadow-lg backdrop-blur transition hover:-translate-y-1 hover:shadow-xl">
             <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600">✦</div>
-            <h3 className="text-xl font-semibold text-slate-900">Analyze a Single Review</h3>
+            <h3 className="text-xl font-semibold text-slate-900">Analyse a Single Review</h3>
             <p className="mt-1 text-slate-600">Deep insights from one patient’s feedback.</p>
           </Link>
 
           <Link href="/analysis/practice" className="group rounded-2xl border border-white/10 bg-white/70 p-6 shadow-lg backdrop-blur transition hover:-translate-y-1 hover:shadow-xl">
             <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100 text-teal-600">◎</div>
-            <h3 className="text-xl font-semibold text-slate-900">Analyze Google Maps Reviews</h3>
+            <h3 className="text-xl font-semibold text-slate-900">Analyse Google Maps Reviews</h3>
             <p className="mt-1 text-slate-600">Aggregate sentiment and themes across your practice.</p>
           </Link>
         </section>
