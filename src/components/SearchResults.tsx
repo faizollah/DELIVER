@@ -4,9 +4,9 @@ import React, { ComponentType } from 'react';
 
 type LinkProps = { href: string; children: React.ReactNode; className?: string };
 
-type LinkLike = ComponentType<LinkProps> | ((props: LinkProps) => React.ReactNode);
+type LinkLike = ComponentType<LinkProps>;
 
-const DefaultLink = ({ href, children, className }: LinkProps) => (
+const DefaultLink: LinkLike = ({ href, children, className }) => (
   <NextLink href={href} className={className}>
     {children}
   </NextLink>
@@ -15,7 +15,7 @@ const DefaultLink = ({ href, children, className }: LinkProps) => (
 export default async function SearchResults({ query, LinkComponent = DefaultLink }: { query: string; LinkComponent?: LinkLike }) {
   if (!query) return null;
   const practices = await searchPractices(query);
-  const Linker = LinkComponent as any;
+  const Linker: LinkLike = LinkComponent;
   return (
     <div className="bg-white p-8 rounded-lg shadow-md">
       <h2 className="text-2xl font-semibold text-gray-700 mb-4">Search Results</h2>
