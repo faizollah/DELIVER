@@ -13,6 +13,8 @@ import {
   MultilabelBatchResult,
 } from '@/lib/types';
 
+const http = axios.create({ timeout: 10000 });
+
 const SENTIMENT_URL = 'http://38.54.126.14:8081/predict';
 const TOPICS_URL = 'http://38.54.126.14:8082/predict';
 
@@ -39,7 +41,7 @@ export async function searchPractices(query: string): Promise<Practice[]> {
     type: 'dentist',
     language: 'en',
   };
-  const response = await axios.get(url, { params });
+  const response = await http.get(url, { params });
   const places = response.data.results as GooglePlace[];
   return places.map((p) => ({
     place_id: p.place_id,
@@ -59,7 +61,7 @@ export async function getPracticeDetails(place_id: string): Promise<PracticeDeta
     key: process.env.GOOGLE_PLACES_API_KEY,
     language: 'en',
   };
-  const response = await axios.get(url, { params });
+  const response = await http.get(url, { params });
   return response.data.result as PracticeDetails;
 }
 
@@ -80,13 +82,18 @@ export async function analyzeSingleReview(text: string): Promise<AnalysisResults
     all_probabilities: firstTopic.all_probabilities,
   };
 
-  await prisma.sentimentLog.create({
-    data: {
-      inputText: text,
-      sentiment: sentimentResult.sentiment,
-      confidence: sentimentResult.confidence,
-    },
-  });
+  // Best-effort logging: ignore DB errors in serverless env
+  try {
+    await prisma.sentimentLog.create({
+      data: {
+        inputText: text,
+        sentiment: sentimentResult.sentiment,
+        confidence: sentimentResult.confidence,
+      },
+    });
+  } catch (e) {
+    console.warn('Skipping DB log (not configured or unavailable).');
+  }
 
   return { sentimentResult, multilabelResult };
 }
@@ -106,11 +113,19 @@ export async function analyzePracticeReviews(reviews: Review[]): Promise<{
 }
 
 async function callSentiment(texts: string[]): Promise<SentimentAPIResult[]> {
-  const { data } = await axios.post(SENTIMENT_URL, { texts });
-  return data.results as SentimentAPIResult[];
+  try {
+    const { data } = await http.post(SENTIMENT_URL, { texts });
+    return data.results as SentimentAPIResult[];
+  } catch (e) {
+    throw new Error('Sentiment service is unavailable.');
+  }
 }
 
 async function callTopics(texts: string[]): Promise<TopicsAPIResult[]> {
-  const { data } = await axios.post(TOPICS_URL, { texts, threshold: 0.3 });
-  return data.results as TopicsAPIResult[];
+  try {
+    const { data } = await http.post(TOPICS_URL, { texts, threshold: 0.3 });
+    return data.results as TopicsAPIResult[];
+  } catch (e) {
+    throw new Error('Topic modelling service is unavailable.');
+  }
 }
