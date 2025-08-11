@@ -21,7 +21,7 @@ function buildInsights(sentimentCounts: Record<string, number>, labelCounts: Rec
 
 export default function PracticeAnalysis({ analysisResults }: { analysisResults: AggregatedResults }) {
   const { sentimentCounts, labelCounts } = analysisResults;
-  const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0);
+  const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0) || 1;
   const labels = Object.keys(sentimentCounts);
   const values = Object.values(sentimentCounts);
 
@@ -55,17 +55,23 @@ export default function PracticeAnalysis({ analysisResults }: { analysisResults:
 
   const insights = buildInsights(sentimentCounts as Record<string, number>, labelCounts as Record<string, number>);
 
-  const topicEntries = Object.entries(labelCounts as Record<string, number>).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  // Normalise topic counts to probabilities (0..1) for the bar chart
+  const topicCounts = labelCounts as Record<string, number>;
+  const topicProbs: Record<string, number> = Object.fromEntries(
+    Object.entries(topicCounts).map(([k, v]) => [k, v / total])
+  );
+
+  const topicEntries = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 12);
 
   return (
     <div className="space-y-6">
       <p className="rounded-xl border border-slate-200/70 bg-white/80 p-4 text-slate-800">{insights}</p>
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm" style={{ height: 320 }}>
+        <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm" style={{ height: 360 }}>
           <h4 className="mb-3 text-sm font-semibold text-slate-700">Overall Sentiment Distribution</h4>
           <Pie data={pieData} options={pieOptions} />
         </div>
-        <TopicsBar probs={labelCounts as Record<string, number>} />
+        <TopicsBar probs={topicProbs} />
       </div>
 
       <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
@@ -83,7 +89,7 @@ export default function PracticeAnalysis({ analysisResults }: { analysisResults:
               <tr key={topic} className="border-t border-slate-100">
                 <td className="py-2 text-slate-800">{topic}</td>
                 <td className="py-2 text-right text-slate-800">{count}</td>
-                <td className="py-2 text-right text-slate-800">{total ? ((count / total) * 100).toFixed(1) : '0.0'}%</td>
+                <td className="py-2 text-right text-slate-800">{((count / total) * 100).toFixed(1)}%</td>
               </tr>
             ))}
           </tbody>

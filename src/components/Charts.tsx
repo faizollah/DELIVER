@@ -37,6 +37,7 @@ export function SentimentPie({ label, confidence }: { label: string; confidence:
 
   const options = {
     animation,
+    layout: { padding: 8 },
     plugins: {
       legend: { display: true, position: 'bottom' as const },
       tooltip: { enabled: true },
@@ -73,6 +74,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
 
   const options: ChartOptions<'bar'> = {
     animation,
+    layout: { padding: { right: 12 } },
     indexAxis: 'y',
     scales: {
       x: {
@@ -83,6 +85,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
       },
       y: {
         grid: { display: false },
+        ticks: { autoSkip: false },
       },
     },
     plugins: {
