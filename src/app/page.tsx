@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 
 export default function HomePage() {
   return (
@@ -12,15 +11,15 @@ export default function HomePage() {
 
       <header className="container mx-auto px-6 pt-10">
         <div className="flex items-center gap-4">
-          <Image src="/Deliver.svg" alt="Deliver" width={90} height={28} />
-          <Image src="/EU_logo.svg" alt="EU" width={70} height={24} />
+          <Image src="/Deliver.png" alt="Deliver" width={90} height={28} />
+          <Image src="/EU_logo.png" alt="EU" width={70} height={24} />
           <Image src="/manchester_logo.png" alt="Manchester" width={100} height={30} />
         </div>
       </header>
 
       <main className="container mx-auto px-6 py-16">
         <div className="mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-2">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+          <div>
             <h1 className="text-5xl font-extrabold tracking-tight text-slate-900 md:text-6xl">
               Turn patient feedback into{' '}
               <span className="bg-gradient-to-r from-sky-500 via-cyan-500 to-teal-500 bg-clip-text text-transparent">
@@ -46,21 +45,21 @@ export default function HomePage() {
             </div>
 
             <div className="mt-10 flex items-center gap-6 opacity-80">
-              <Image src="/Deliver.svg" alt="Deliver" width={80} height={26} />
-              <Image src="/EU_logo.svg" alt="EU" width={60} height={22} />
+              <Image src="/Deliver.png" alt="Deliver" width={80} height={26} />
+              <Image src="/EU_logo.png" alt="EU" width={60} height={22} />
               <Image src="/manchester_logo.png" alt="Manchester" width={90} height={28} />
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.1 }} className="relative hidden md:block">
+          <div className="relative hidden md:block">
             <div className="mx-auto h-80 w-full max-w-lg rounded-3xl border border-white/10 bg-white/60 p-6 backdrop-blur shadow-xl">
               <div className="h-full rounded-2xl bg-gradient-to-br from-sky-50 to-teal-50" />
             </div>
             <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-2xl bg-sky-400/30 blur-xl" />
-          </motion.div>
+          </div>
         </div>
 
-        <motion.section initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="mx-auto mt-16 grid max-w-7xl gap-6 md:grid-cols-2">
+        <section className="mx-auto mt-16 grid max-w-7xl gap-6 md:grid-cols-2">
           <Link href="/analysis/single" className="group rounded-2xl border border-white/10 bg-white/70 p-6 shadow-lg backdrop-blur transition hover:-translate-y-1 hover:shadow-xl">
             <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600">✦</div>
             <h3 className="text-xl font-semibold text-slate-900">Analyze a Single Review</h3>
@@ -72,7 +71,7 @@ export default function HomePage() {
             <h3 className="text-xl font-semibold text-slate-900">Analyze Google Maps Reviews</h3>
             <p className="mt-1 text-slate-600">Aggregate sentiment and themes across your practice.</p>
           </Link>
-        </motion.section>
+        </section>
       </main>
 
       <footer className="container mx-auto px-6 py-12 text-sm text-slate-500">© 2024 DELIVER. All rights reserved.</footer>
