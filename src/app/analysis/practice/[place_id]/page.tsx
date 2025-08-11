@@ -1,7 +1,7 @@
 import { getPracticeDetails, analyzePracticeReviews } from '@/app/actions';
 import Header from '@/components/Header';
 import PracticeAnalysis from '@/components/PracticeAnalysis';
-import { SentimentBatchResult, MultilabelBatchResult, AggregatedResults } from '@/lib/types';
+import { SentimentBatchResult, MultilabelBatchResult, AggregatedResults, Review } from '@/lib/types';
 
 function aggregateResults(sentimentResults: SentimentBatchResult, multilabelResults: MultilabelBatchResult): AggregatedResults {
     const sentimentCounts: { [key: string]: number } = {};
@@ -23,8 +23,11 @@ function aggregateResults(sentimentResults: SentimentBatchResult, multilabelResu
 
 export default async function PracticeAnalysisPage({ params }: { params: { place_id: string } }) {
   const details = await getPracticeDetails(params.place_id);
-  const reviews = (details.reviews || []).map((r: any) => ({ text: r.text || '' })).filter((r: any) => r.text);
-  const analysisResults = await analyzePracticeReviews(reviews as any);
+  const reviews: Review[] = (details.reviews || [])
+    .map((r: { text?: string }) => ({ text: r.text || '' }))
+    .filter((r: Review) => r.text.length > 0);
+
+  const analysisResults = await analyzePracticeReviews(reviews);
   const aggregatedResults = aggregateResults(analysisResults.sentimentBatchResults, analysisResults.multilabelBatchResults);
 
   return (

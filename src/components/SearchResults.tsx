@@ -1,7 +1,16 @@
 import { searchPractices } from '@/app/actions';
-import Link from 'next/link';
+import NextLink from 'next/link';
+import React from 'react';
 
-export default async function SearchResults({ query, LinkComponent = Link }: { query: string; LinkComponent?: any }) {
+type LinkLike = (props: { href: string; children: React.ReactNode; className?: string }) => JSX.Element;
+
+const DefaultLink: LinkLike = ({ href, children, className }) => (
+  <NextLink href={href} className={className}>
+    {children}
+  </NextLink>
+);
+
+export default async function SearchResults({ query, LinkComponent = DefaultLink }: { query: string; LinkComponent?: LinkLike }) {
   if (!query) return null;
   const practices = await searchPractices(query);
   return (

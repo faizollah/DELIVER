@@ -58,7 +58,15 @@ export default function SingleReviewPage() {
             </button>
           </form>
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-          {result && (
+
+          {loading && (
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="h-[260px] animate-pulse rounded-xl bg-slate-200/70" />
+              <div className="h-[400px] animate-pulse rounded-xl bg-slate-200/70" />
+            </div>
+          )}
+
+          {result && !loading && (
             <div className="mt-6 space-y-4">
               <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4">
                 <p className="text-slate-800"><span className="font-semibold">Sentiment:</span> {result.sentiment} ({(result.confidence*100).toFixed(1)}%)</p>
