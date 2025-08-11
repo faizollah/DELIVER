@@ -9,6 +9,7 @@ import {
   LinearScale,
   BarElement,
   Title,
+  type TooltipItem,
 } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import React from 'react';
@@ -73,7 +74,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
         min: 0,
         max: 1,
         grid: { color: 'rgba(226,232,240,0.6)' },
-        ticks: { callback: (v: any) => `${Math.round(Number(v) * 100)}%` },
+        ticks: { callback: (v: number | string) => `${Math.round(Number(v) * 100)}%` },
       },
       y: {
         grid: { display: false },
@@ -83,7 +84,8 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (ctx: any) => `${ctx.parsed.x !== undefined ? (ctx.parsed.x * 100).toFixed(1) : ctx.parsed}%`,
+          label: (ctx: TooltipItem<'bar'>) =>
+            `${ctx.parsed.x !== undefined ? (ctx.parsed.x * 100).toFixed(1) : ctx.parsed}%`,
         },
       },
       title: {
