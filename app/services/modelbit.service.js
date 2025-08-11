@@ -1,5 +1,5 @@
 const axios = require('axios');
-const config = require('../../config');
+const config = require(`${__basedir}/config.js`);
 
 async function callModelbitApi(deploymentName, text) {
     const url = `https://${config.modelbitWorkspace}.${config.modelbitRegion}.modelbit.com/v1/${deploymentName}/latest`;

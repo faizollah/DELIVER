@@ -1,5 +1,8 @@
 const express = require('express');
 const path = require('path');
+
+global.__basedir = __dirname;
+
 const app = express();
 const port = process.env.PORT || 3000;
 

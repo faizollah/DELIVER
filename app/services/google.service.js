@@ -1,5 +1,5 @@
 const axios = require('axios');
-const config = require('../../config');
+const config = require(`${__basedir}/config.js`);
 
 async function searchPractices(query) {
     const url = `${config.placesApiBaseUrl}/textsearch/json`;

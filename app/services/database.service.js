@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const config = require('../../config');
+const config = require(`${__basedir}/config.js`);
 
 const pool = new Pool(config.dbConfig);
 
