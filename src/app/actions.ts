@@ -16,6 +16,21 @@ import {
 const SENTIMENT_URL = 'http://38.54.126.14:8081/predict';
 const TOPICS_URL = 'http://38.54.126.14:8082/predict';
 
+type GooglePlace = {
+  place_id: string;
+  name: string;
+  formatted_address: string;
+  rating: number;
+  user_ratings_total: number;
+};
+
+type SentimentAPIResult = { label: string; class_id: number; confidence: number };
+
+type TopicsAPIResult = {
+  predicted_labels: string[];
+  all_probabilities: Record<string, number>;
+};
+
 export async function searchPractices(query: string): Promise<Practice[]> {
   const url = `https://maps.googleapis.com/maps/api/place/textsearch/json`;
   const params = {
@@ -25,10 +40,12 @@ export async function searchPractices(query: string): Promise<Practice[]> {
     language: 'en',
   };
   const response = await axios.get(url, { params });
-  return response.data.results.map((p: any) => ({
+  const places = response.data.results as GooglePlace[];
+  return places.map((p) => ({
     place_id: p.place_id,
     name: p.name,
     address: p.formatted_address,
+    formatted_address: p.formatted_address,
     rating: p.rating,
     user_ratings_total: p.user_ratings_total,
   }));
@@ -43,10 +60,9 @@ export async function getPracticeDetails(place_id: string): Promise<PracticeDeta
     language: 'en',
   };
   const response = await axios.get(url, { params });
-  return response.data.result;
+  return response.data.result as PracticeDetails;
 }
 
-// Single text analysis via new REST endpoints
 export async function analyzeSingleReview(text: string): Promise<AnalysisResults> {
   const sentiment = await callSentiment([text]);
   const topics = await callTopics([text]);
@@ -57,7 +73,7 @@ export async function analyzeSingleReview(text: string): Promise<AnalysisResults
   const sentimentResult: SentimentResult = {
     sentiment: firstSent.label,
     confidence: firstSent.confidence,
-  } as any;
+  };
 
   const multilabelResult: MultilabelResult = {
     predicted_labels: firstTopic.predicted_labels,
@@ -75,7 +91,6 @@ export async function analyzeSingleReview(text: string): Promise<AnalysisResults
   return { sentimentResult, multilabelResult };
 }
 
-// Batch review analysis for a practice
 export async function analyzePracticeReviews(reviews: Review[]): Promise<{
   sentimentBatchResults: SentimentBatchResult;
   multilabelBatchResults: MultilabelBatchResult;
@@ -84,18 +99,18 @@ export async function analyzePracticeReviews(reviews: Review[]): Promise<{
   const sentiment = await callSentiment(texts);
   const topics = await callTopics(texts);
 
-  const sentimentBatchResults: SentimentBatchResult = sentiment.map((s, i) => [i, { sentiment: s.label, confidence: s.confidence } as any]);
+  const sentimentBatchResults: SentimentBatchResult = sentiment.map((s, i) => [i, { sentiment: s.label, confidence: s.confidence }]);
   const multilabelBatchResults: MultilabelBatchResult = topics.map((t, i) => [i, { predicted_labels: t.predicted_labels }]);
 
   return { sentimentBatchResults, multilabelBatchResults };
 }
 
-async function callSentiment(texts: string[]) {
+async function callSentiment(texts: string[]): Promise<SentimentAPIResult[]> {
   const { data } = await axios.post(SENTIMENT_URL, { texts });
-  return data.results as { label: string; class_id: number; confidence: number }[];
+  return data.results as SentimentAPIResult[];
 }
 
-async function callTopics(texts: string[]) {
+async function callTopics(texts: string[]): Promise<TopicsAPIResult[]> {
   const { data } = await axios.post(TOPICS_URL, { texts, threshold: 0.3 });
-  return data.results as { predicted_labels: string[]; all_probabilities: Record<string, number> }[];
+  return data.results as TopicsAPIResult[];
 }

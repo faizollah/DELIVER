@@ -16,7 +16,7 @@ export interface PracticeDetails extends Practice {
 }
 
 export interface SentimentResult {
-  sentiment: 'Positive' | 'Negative' | 'Neutral' | 'Mixed';
+  sentiment: string; // e.g. "positive" | "negative" | "mixed" | "neutral"
   confidence: number;
 }
 
