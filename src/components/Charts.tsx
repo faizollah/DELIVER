@@ -10,6 +10,7 @@ import {
   BarElement,
   Title,
   type TooltipItem,
+  type ChartOptions,
 } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import React from 'react';
@@ -67,8 +68,8 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
     ],
   };
 
-  const options = {
-    indexAxis: 'y' as const,
+  const options: ChartOptions<'bar'> = {
+    indexAxis: 'y',
     scales: {
       x: {
         min: 0,
@@ -92,7 +93,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
         display: true,
         text: 'Topics (Top probabilities)',
         color: '#0f172a',
-        font: { weight: '600' as const },
+        font: { weight: 600 },
       },
     },
     responsive: true,
