@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 const config = require('./config');
@@ -7,17 +8,17 @@ const mysql = require('mysql');
 const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
 
 app.set('view engine', 'ejs');
-app.set('views', __dirname + '/templates');
+app.set('views', path.join(__dirname, 'templates'));
 
-app.use(express.static('static'));
+app.use(express.static(path.join(__dirname, 'static')));
 app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/templates/index.html');
+    res.sendFile(path.join(__dirname, 'templates', 'index.html'));
 });
 
 app.get('/practice_search.html', (req, res) => {
-    res.sendFile(__dirname + '/templates/practice_search.html');
+    res.sendFile(path.join(__dirname, 'templates', 'practice_search.html'));
 });
 
 app.post('/analyze', async (req, res) => {
@@ -26,7 +27,7 @@ app.post('/analyze', async (req, res) => {
         const sentimentResult = await callModelbitApi(config.sentimentDeploymentName, text);
         const multilabelResult = await callModelbitApi(config.multilabelDeploymentName, text);
 
-        logAnalysis(text, sentimentResult.sentiment, sentimentResult.confidence);
+        await logAnalysis(text, sentimentResult.sentiment, sentimentResult.confidence);
 
         const charts = await generateCharts(sentimentResult, multilabelResult);
 
@@ -38,7 +39,7 @@ app.post('/analyze', async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        res.sendFile(__dirname + '/templates/error.html');
+        res.status(500).sendFile(path.join(__dirname, 'templates', 'error.html'));
     }
 });
 
@@ -49,7 +50,7 @@ app.post('/search', async (req, res) => {
         res.render('practice_search_results', { practices });
     } catch (error) {
         console.error(error);
-        res.sendFile(__dirname + '/templates/error.html');
+        res.status(500).sendFile(path.join(__dirname, 'templates', 'error.html'));
     }
 });
 
@@ -81,7 +82,7 @@ app.get('/analyze_practice/:place_id', async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.sendFile(__dirname + '/templates/error.html');
+        res.status(500).sendFile(path.join(__dirname, 'templates', 'error.html'));
     }
 });
 
@@ -177,13 +178,24 @@ async function callModelbitBatchApi(deploymentName, batchData) {
 }
 
 function logAnalysis(text, sentiment, confidence) {
-    const connection = mysql.createConnection(config.dbConfig);
-    connection.connect();
-    const query = 'INSERT INTO sentiment_logs (input_text, sentiment, confidence) VALUES (?, ?, ?)';
-    connection.query(query, [text, sentiment, confidence], (error, results, fields) => {
-        if (error) throw error;
+    return new Promise((resolve, reject) => {
+        const connection = mysql.createConnection(config.dbConfig);
+        connection.connect((err) => {
+            if (err) {
+                console.error('Database connection failed:', err.stack);
+                return reject(err);
+            }
+            const query = 'INSERT INTO sentiment_logs (input_text, sentiment, confidence) VALUES (?, ?, ?)';
+            connection.query(query, [text, sentiment, confidence], (error, results) => {
+                connection.end(); // End connection in both cases
+                if (error) {
+                    console.error('Error logging to database:', error);
+                    return reject(error);
+                }
+                resolve(results);
+            });
+        });
     });
-    connection.end();
 }
 
 function aggregateResults(sentimentResults, multilabelResults) {
