@@ -1,8 +1,9 @@
 import { getPracticeDetails, analyzePracticeReviews } from '@/app/actions';
 import Header from '@/components/Header';
 import PracticeAnalysis from '@/components/PracticeAnalysis';
+import { SentimentBatchResult, MultilabelBatchResult, AggregatedResults } from '@/lib/types';
 
-function aggregateResults(sentimentResults: any[], multilabelResults: any[]) {
+function aggregateResults(sentimentResults: SentimentBatchResult, multilabelResults: MultilabelBatchResult): AggregatedResults {
     const sentimentCounts: { [key: string]: number } = {};
     const labelCounts: { [key: string]: number } = {};
 

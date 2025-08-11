@@ -11,6 +11,7 @@ import {
   Legend,
   ArcElement,
 } from 'chart.js';
+import { AnalysisResults } from '@/lib/types';
 
 ChartJS.register(
   CategoryScale,
@@ -22,7 +23,7 @@ ChartJS.register(
   ArcElement
 );
 
-export default function SingleReviewAnalysis({ analysisResults }: { analysisResults: any }) {
+export default function SingleReviewAnalysis({ analysisResults }: { analysisResults: AnalysisResults }) {
   const { sentimentResult, multilabelResult } = analysisResults;
 
   const sentimentData = {

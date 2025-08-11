@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { analyzeSingleReview } from '@/app/actions';
 import SingleReviewAnalysis from './SingleReviewAnalysis';
+import { AnalysisResults } from '@/lib/types';
 
 export default function SingleReviewForm() {
-  const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

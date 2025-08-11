@@ -11,6 +11,7 @@ import {
   Legend,
   ArcElement,
 } from 'chart.js';
+import { AggregatedResults } from '@/lib/types';
 
 ChartJS.register(
   CategoryScale,
@@ -22,7 +23,7 @@ ChartJS.register(
   ArcElement
 );
 
-export default function PracticeAnalysis({ analysisResults }: { analysisResults: any }) {
+export default function PracticeAnalysis({ analysisResults }: { analysisResults: AggregatedResults }) {
   const { sentimentCounts, labelCounts } = analysisResults;
 
   const sentimentData = {
@@ -35,7 +36,7 @@ export default function PracticeAnalysis({ analysisResults }: { analysisResults:
     ],
   };
 
-  const topLabels = Object.entries(labelCounts).sort(([, a], [, b]) => b - a).slice(0, 15);
+  const topLabels = Object.entries(labelCounts).sort(([, a], [, b]) => (b as number) - (a as number)).slice(0, 15);
 
   const multilabelData = {
     labels: topLabels.map(([label]) => label),
