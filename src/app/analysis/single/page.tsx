@@ -17,14 +17,14 @@ export default function SingleReviewPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
       });
-      if (!res.ok) throw new Error('Failed to analyse');
-      const data = await res.json();
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload?.error || 'Failed to analyse');
       setResult({
-        sentiment: data.sentimentResult.sentiment,
-        confidence: data.sentimentResult.confidence,
-        topics: data.multilabelResult.predicted_labels,
+        sentiment: payload.sentimentResult.sentiment,
+        confidence: payload.sentimentResult.confidence,
+        topics: payload.multilabelResult.predicted_labels,
       });
-    } catch (err) {
+    } catch {
       setError('Sorry, something went wrong analysing this text. Please try again.');
     } finally {
       setLoading(false);

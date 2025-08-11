@@ -91,7 +91,7 @@ export async function analyzeSingleReview(text: string): Promise<AnalysisResults
         confidence: sentimentResult.confidence,
       },
     });
-  } catch (e) {
+  } catch {
     console.warn('Skipping DB log (not configured or unavailable).');
   }
 
@@ -116,7 +116,7 @@ async function callSentiment(texts: string[]): Promise<SentimentAPIResult[]> {
   try {
     const { data } = await http.post(SENTIMENT_URL, { texts });
     return data.results as SentimentAPIResult[];
-  } catch (e) {
+  } catch {
     throw new Error('Sentiment service is unavailable.');
   }
 }
@@ -125,7 +125,7 @@ async function callTopics(texts: string[]): Promise<TopicsAPIResult[]> {
   try {
     const { data } = await http.post(TOPICS_URL, { texts, threshold: 0.3 });
     return data.results as TopicsAPIResult[];
-  } catch (e) {
+  } catch {
     throw new Error('Topic modelling service is unavailable.');
   }
 }
