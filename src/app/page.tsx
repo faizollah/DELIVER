@@ -12,7 +12,7 @@ export default function HomePage() {
       <header className="container mx-auto px-6 pt-10">
         <div className="flex items-center gap-6">
           <Image src="/Deliver.png" alt="Deliver" width={120} height={38} />
-          <Image src="/EU_logo.png" alt="EU" width={90} height={30} />
+          <Image src="/EU_logo.png" alt="EU" width={180} height={60} />
           <Image src="/manchester_logo.png" alt="Manchester" width={140} height={42} />
         </div>
       </header>
@@ -29,20 +29,6 @@ export default function HomePage() {
             <p className="mt-4 text-lg text-slate-600">
               AI-powered analysis for single reviews and full-practice Google reviews—fast, accurate, and privacy‑safe.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Link
-                href="/analysis/single"
-                className="rounded-full bg-sky-600 px-6 py-3 font-semibold text-white shadow-lg shadow-sky-600/20 transition hover:shadow-xl hover:brightness-110"
-              >
-                Analyse a Single Review
-              </Link>
-              <Link
-                href="/analysis/practice"
-                className="rounded-full border border-slate-200/70 bg-white/60 px-6 py-3 font-semibold text-slate-800 backdrop-blur transition hover:bg-white"
-              >
-                Analyse Practice Reviews
-              </Link>
-            </div>
           </div>
 
           <div className="relative hidden md:block">
