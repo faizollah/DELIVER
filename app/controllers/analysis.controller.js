@@ -2,7 +2,7 @@ const modelbitService = require('../services/modelbit.service');
 const googleService = require('../services/google.service');
 const dbService = require('../services/database.service');
 const chartService = require('../services/chart.service');
-const config = require('../config');
+const config = require('../../config');
 
 async function analyzeSingleReview(req, res) {
     const text = req.body.text;
