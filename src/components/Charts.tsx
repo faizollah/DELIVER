@@ -17,6 +17,8 @@ import React from 'react';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
+const animation = { duration: 700, easing: 'easeOutQuart' } as const;
+
 export function SentimentPie({ label, confidence }: { label: string; confidence: number }) {
   const pct = Math.max(0, Math.min(1, confidence));
   const data = {
@@ -25,8 +27,8 @@ export function SentimentPie({ label, confidence }: { label: string; confidence:
       {
         data: [pct, 1 - pct],
         backgroundColor: [
-          'rgba(14, 165, 233, 0.9)', // sky-500
-          'rgba(226, 232, 240, 0.8)', // slate-200
+          'rgba(14, 165, 233, 0.9)',
+          'rgba(226, 232, 240, 0.8)',
         ],
         borderWidth: 0,
       },
@@ -34,6 +36,7 @@ export function SentimentPie({ label, confidence }: { label: string; confidence:
   };
 
   const options = {
+    animation,
     plugins: {
       legend: { display: true, position: 'bottom' as const },
       tooltip: { enabled: true },
@@ -69,6 +72,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
   };
 
   const options: ChartOptions<'bar'> = {
+    animation,
     indexAxis: 'y',
     scales: {
       x: {
@@ -86,7 +90,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
       tooltip: {
         callbacks: {
           label: (ctx: TooltipItem<'bar'>) =>
-            `${ctx.parsed.x !== undefined ? (ctx.parsed.x * 100).toFixed(1) : ctx.parsed}%`,
+            `${ctx.parsed.x !== undefined ? (ctx.parsed.x * 100).toFixed(1) : ctx.parsed}%`;
         },
       },
       title: {

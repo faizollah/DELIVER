@@ -21,23 +21,19 @@ function aggregateResults(sentimentResults: SentimentBatchResult, multilabelResu
     return { sentimentCounts, labelCounts };
 }
 
-interface PracticeAnalysisPageProps {
-  params: Promise<{ place_id: string }>;
-}
-
-export default async function PracticeAnalysisPage({ params }: PracticeAnalysisPageProps) {
-  const { place_id } = await params;
-  const practiceDetails = await getPracticeDetails(place_id);
-  const reviews = practiceDetails.reviews || [];
-  const analysisResults = await analyzePracticeReviews(reviews);
+export default async function PracticeAnalysisPage({ params }: { params: { place_id: string } }) {
+  const details = await getPracticeDetails(params.place_id);
+  const reviews = (details.reviews || []).map((r: any) => ({ text: r.text || '' })).filter((r: any) => r.text);
+  const analysisResults = await analyzePracticeReviews(reviews as any);
   const aggregatedResults = aggregateResults(analysisResults.sentimentBatchResults, analysisResults.multilabelBatchResults);
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-6 py-8">
         <Header />
         <main className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
-          <h2 className="text-3xl font-bold text-center mb-8">{practiceDetails.name} - Analysis</h2>
+          <h2 className="text-3xl font-bold text-center mb-2">{details.name}</h2>
+          <p className="text-center text-slate-600 mb-6">{details.formatted_address} · {reviews.length} reviews analysed</p>
           {reviews.length > 0 ? (
             <PracticeAnalysis analysisResults={aggregatedResults} />
           ) : (

@@ -1,64 +1,57 @@
 'use client';
-
-import { Bar, Pie } from 'react-chartjs-2';
+import { Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
+  ArcElement,
   Tooltip,
   Legend,
-  ArcElement,
 } from 'chart.js';
 import { AggregatedResults } from '@/lib/types';
+import { TopicsBar } from './Charts';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function PracticeAnalysis({ analysisResults }: { analysisResults: AggregatedResults }) {
   const { sentimentCounts, labelCounts } = analysisResults;
+  const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0);
+  const labels = Object.keys(sentimentCounts);
+  const values = Object.values(sentimentCounts);
 
-  const sentimentData = {
-    labels: Object.keys(sentimentCounts),
+  const pieData = {
+    labels: labels.map((l) => l[0].toUpperCase() + l.slice(1)),
     datasets: [
       {
-        data: Object.values(sentimentCounts),
-        backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56'],
+        data: values,
+        backgroundColor: ['#34d399', '#f87171', '#60a5fa', '#fbbf24'],
+        borderWidth: 0,
       },
     ],
   };
 
-  const topLabels = Object.entries(labelCounts).sort(([, a], [, b]) => (b as number) - (a as number)).slice(0, 15);
-
-  const multilabelData = {
-    labels: topLabels.map(([label]) => label),
-    datasets: [
-      {
-        label: 'Frequency',
-        data: topLabels.map(([, count]) => count),
-        backgroundColor: '#36A2EB',
+  const pieOptions = {
+    plugins: {
+      legend: { display: true, position: 'bottom' as const },
+      tooltip: {
+        callbacks: {
+          label: (ctx: any) => {
+            const v = ctx.parsed as number;
+            const pct = total ? ((v / total) * 100).toFixed(1) : '0.0';
+            return `${ctx.label}: ${pct}%`;
+          },
+        },
       },
-    ],
+    },
+    responsive: true,
+    maintainAspectRatio: false,
   };
 
   return (
-    <div className="grid md:grid-cols-2 gap-8">
-      <div>
-        <h3 className="text-xl font-semibold text-gray-700 mb-2">Overall Sentiment</h3>
-        <Pie data={sentimentData} />
+    <div className="grid gap-6 md:grid-cols-2">
+      <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm" style={{ height: 320 }}>
+        <h4 className="mb-3 text-sm font-semibold text-slate-700">Overall Sentiment Distribution</h4>
+        <Pie data={pieData} options={pieOptions} />
       </div>
-      <div>
-        <h3 className="text-xl font-semibold text-gray-700 mb-2">Key Themes</h3>
-        <Bar data={multilabelData} options={{ indexAxis: 'y' }} />
-      </div>
+      <TopicsBar probs={labelCounts as any} />
     </div>
   );
 }
