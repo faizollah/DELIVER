@@ -21,8 +21,11 @@ function aggregateResults(sentimentResults: SentimentBatchResult, multilabelResu
     return { sentimentCounts, labelCounts };
 }
 
-export default async function PracticeAnalysisPage({ params }: { params: { place_id: string } }) {
-  const details = await getPracticeDetails(params.place_id);
+interface PracticeAnalysisPageProps { params: Promise<{ place_id: string }> }
+
+export default async function PracticeAnalysisPage({ params }: PracticeAnalysisPageProps) {
+  const { place_id } = await params;
+  const details = await getPracticeDetails(place_id);
   const reviews: Review[] = (details.reviews || [])
     .map((r: { text?: string }) => ({ text: r.text || '' }))
     .filter((r: Review) => r.text.length > 0);

@@ -55,6 +55,8 @@ export default function PracticeAnalysis({ analysisResults }: { analysisResults:
 
   const insights = buildInsights(sentimentCounts as Record<string, number>, labelCounts as Record<string, number>);
 
+  const topicEntries = Object.entries(labelCounts as Record<string, number>).sort((a, b) => b[1] - a[1]).slice(0, 12);
+
   return (
     <div className="space-y-6">
       <p className="rounded-xl border border-slate-200/70 bg-white/80 p-4 text-slate-800">{insights}</p>
@@ -64,6 +66,28 @@ export default function PracticeAnalysis({ analysisResults }: { analysisResults:
           <Pie data={pieData} options={pieOptions} />
         </div>
         <TopicsBar probs={labelCounts as Record<string, number>} />
+      </div>
+
+      <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+        <h4 className="mb-3 text-sm font-semibold text-slate-700">Top Topics</h4>
+        <table className="w-full text-sm">
+          <thead className="text-slate-500">
+            <tr>
+              <th className="text-left py-2">Topic</th>
+              <th className="text-right py-2">Count</th>
+              <th className="text-right py-2">% of reviews</th>
+            </tr>
+          </thead>
+          <tbody>
+            {topicEntries.map(([topic, count]) => (
+              <tr key={topic} className="border-t border-slate-100">
+                <td className="py-2 text-slate-800">{topic}</td>
+                <td className="py-2 text-right text-slate-800">{count}</td>
+                <td className="py-2 text-right text-slate-800">{total ? ((count / total) * 100).toFixed(1) : '0.0'}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
