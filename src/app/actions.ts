@@ -17,6 +17,7 @@ const http = axios.create({ timeout: 10000 });
 
 const SENTIMENT_URL = 'http://38.54.126.14:8081/predict';
 const TOPICS_URL = 'http://38.54.126.14:8082/predict';
+const OUTSCRAPER_REVIEWS_URL = 'https://api.app.outscraper.com/maps/reviews-v3';
 
 type GooglePlace = {
   place_id: string;
@@ -57,12 +58,65 @@ export async function getPracticeDetails(place_id: string): Promise<PracticeDeta
   const url = `https://maps.googleapis.com/maps/api/place/details/json`;
   const params = {
     place_id,
-    fields: 'name,formatted_address,reviews',
+    // NOTE: We previously relied on Google's embedded 'reviews' here (max 5).
+    // fields: 'name,formatted_address,reviews',
+    // Switched to getting all reviews via Outscraper; keep details only:
+    fields: 'name,formatted_address',
     key: process.env.GOOGLE_PLACES_API_KEY,
     language: 'en',
   };
   const response = await http.get(url, { params });
-  return response.data.result as PracticeDetails;
+  // Preserve shape by adding empty reviews array; we fetch them separately now
+  return { ...(response.data.result as PracticeDetails), reviews: (response.data.result?.reviews as Review[]) || [] };
+}
+
+// Fetch Google Maps reviews via Outscraper (more than 5)
+export async function getPracticeReviews(place_id: string): Promise<Review[]> {
+  // Previous approach (max 5) using Google Place Details:
+  // const url = `https://maps.googleapis.com/maps/api/place/details/json`;
+  // const params = { place_id, fields: 'reviews', key: process.env.GOOGLE_PLACES_API_KEY };
+  // const res = await http.get(url, { params });
+  // const gReviews = (res.data.result?.reviews || []).map((r: { text?: string }) => ({ text: r.text || '' }));
+  // return gReviews;
+
+  // Outscraper implementation
+  const apiKey = process.env.OUTSCRAPER_API_KEY || '';
+  if (!apiKey) {
+    // Fail clearly if key missing; caller can fallback
+    throw new Error('OUTSCRAPER_API_KEY is not set');
+  }
+
+  try {
+    const { data } = await axios.post(
+      OUTSCRAPER_REVIEWS_URL,
+      {
+        // Outscraper accepts place_id or place URL in 'query'
+        query: place_id,
+        sort: 'newest',
+        reviewsLimit: 100,
+      },
+      {
+        headers: {
+          'X-API-KEY': apiKey,
+          'Content-Type': 'application/json',
+        },
+        timeout: 20000,
+      }
+    );
+
+    // Response formats vary; handle common shapes
+    const container = Array.isArray(data) ? data[0] : (data?.data?.[0] ?? data?.[0] ?? {});
+    const rawReviews = container?.reviews || container?.reviews_data || [];
+
+    const reviews: Review[] = (rawReviews as any[])
+      .map((r) => ({ text: r?.review_text || r?.text || r?.review || '' }))
+      .filter((r) => r.text && r.text.trim().length > 0);
+
+    return reviews;
+  } catch (err) {
+    // Surface a concise error; caller can decide how to handle
+    throw new Error('Failed to fetch reviews from Outscraper');
+  }
 }
 
 export async function analyzeSingleReview(text: string): Promise<AnalysisResults> {

@@ -1,4 +1,4 @@
-import { getPracticeDetails, analyzePracticeReviews } from '@/app/actions';
+import { getPracticeDetails, analyzePracticeReviews, getPracticeReviews } from '@/app/actions';
 import Header from '@/components/Header';
 import PracticeAnalysis from '@/components/PracticeAnalysis';
 import { SentimentBatchResult, MultilabelBatchResult, AggregatedResults, Review } from '@/lib/types';
@@ -38,9 +38,22 @@ interface PracticeAnalysisPageProps { params: Promise<{ place_id: string }> }
 export default async function PracticeAnalysisPage({ params }: PracticeAnalysisPageProps) {
   const { place_id } = await params;
   const details = await getPracticeDetails(place_id);
-  const reviews: Review[] = (details.reviews || [])
-    .map((r: { text?: string }) => ({ text: r.text || '' }))
-    .filter((r: Review) => r.text.length > 0);
+
+  // Old (max 5) using Google Place Details embedded reviews:
+  // const reviews: Review[] = (details.reviews || [])
+  //   .map((r: { text?: string }) => ({ text: r.text || '' }))
+  //   .filter((r: Review) => r.text.length > 0);
+
+  // New: fetch more reviews via Outscraper
+  let reviews: Review[] = [];
+  try {
+    reviews = await getPracticeReviews(place_id);
+  } catch (e) {
+    // Fallback to any reviews that Google returned (likely 0–5)
+    reviews = (details.reviews || [])
+      .map((r: { text?: string }) => ({ text: r?.text || '' }))
+      .filter((r: Review) => r.text.length > 0);
+  }
 
   const analysisResults = await analyzePracticeReviews(reviews);
   const aggregatedResults = aggregateResults(analysisResults.sentimentBatchResults, analysisResults.multilabelBatchResults);
