@@ -5,13 +5,16 @@ import prisma from '@/lib/prisma';
 import {
   Practice,
   PracticeDetails,
+  AnalysisResults,
   SentimentResult,
   MultilabelResult,
-  AnalysisResults,
+  Review,
   SentimentBatchResult,
   MultilabelBatchResult,
-  Review
 } from '@/lib/types';
+
+const SENTIMENT_URL = 'http://38.54.126.14:8081/predict';
+const TOPICS_URL = 'http://38.54.126.14:8082/predict';
 
 export async function searchPractices(query: string): Promise<Practice[]> {
   const url = `https://maps.googleapis.com/maps/api/place/textsearch/json`;
@@ -22,7 +25,7 @@ export async function searchPractices(query: string): Promise<Practice[]> {
     language: 'en',
   };
   const response = await axios.get(url, { params });
-  return response.data.results.map((p: Practice) => ({
+  return response.data.results.map((p: any) => ({
     place_id: p.place_id,
     name: p.name,
     address: p.formatted_address,
@@ -37,60 +40,62 @@ export async function getPracticeDetails(place_id: string): Promise<PracticeDeta
     place_id,
     fields: 'name,formatted_address,reviews',
     key: process.env.GOOGLE_PLACES_API_KEY,
-    language: 'en'
+    language: 'en',
   };
   const response = await axios.get(url, { params });
   return response.data.result;
 }
 
+// Single text analysis via new REST endpoints
 export async function analyzeSingleReview(text: string): Promise<AnalysisResults> {
-  const sentimentResult = await callModelbitApi<SentimentResult>(process.env.SENTIMENT_DEPLOYMENT_NAME!, text);
-  const multilabelResult = await callModelbitApi<MultilabelResult>(process.env.MULTILABEL_DEPLOYMENT_NAME!, text);
+  const sentiment = await callSentiment([text]);
+  const topics = await callTopics([text]);
+
+  const firstSent = sentiment[0];
+  const firstTopic = topics[0];
+
+  const sentimentResult: SentimentResult = {
+    sentiment: firstSent.label,
+    confidence: firstSent.confidence,
+  } as any;
+
+  const multilabelResult: MultilabelResult = {
+    predicted_labels: firstTopic.predicted_labels,
+    all_probabilities: firstTopic.all_probabilities,
+  };
 
   await prisma.sentimentLog.create({
     data: {
       inputText: text,
       sentiment: sentimentResult.sentiment,
       confidence: sentimentResult.confidence,
-    }
+    },
   });
 
   return { sentimentResult, multilabelResult };
 }
 
-async function callModelbitApi<T>(deploymentName: string, text: string): Promise<T> {
-  const url = `https://${process.env.MODELBIT_WORKSPACE}.${process.env.MODELBIT_REGION}.modelbit.com/v1/${deploymentName}/latest`;
-  const headers = {
-    'Content-Type': 'application/json',
-    'X-Modelbit-Api-Key': process.env.MODELBIT_API_KEY,
-  };
-  const body = {
-    data: [[1, text]],
-  };
-  const response = await axios.post(url, body, { headers });
-  return response.data.data[0][1];
-}
-
+// Batch review analysis for a practice
 export async function analyzePracticeReviews(reviews: Review[]): Promise<{
   sentimentBatchResults: SentimentBatchResult;
   multilabelBatchResults: MultilabelBatchResult;
 }> {
-  const batchData = reviews.map((review, i) => [i, review.text]);
-  const sentimentBatchResults = await callModelbitBatchApi<SentimentBatchResult>(process.env.SENTIMENT_DEPLOYMENT_NAME!, batchData);
-  const multilabelBatchResults = await callModelbitBatchApi<MultilabelBatchResult>(process.env.MULTILABEL_DEPLOYMENT_NAME!, batchData);
+  const texts = reviews.map((r) => r.text);
+  const sentiment = await callSentiment(texts);
+  const topics = await callTopics(texts);
+
+  const sentimentBatchResults: SentimentBatchResult = sentiment.map((s, i) => [i, { sentiment: s.label, confidence: s.confidence } as any]);
+  const multilabelBatchResults: MultilabelBatchResult = topics.map((t, i) => [i, { predicted_labels: t.predicted_labels }]);
 
   return { sentimentBatchResults, multilabelBatchResults };
 }
 
-async function callModelbitBatchApi<T>(deploymentName: string, batchData: (string | number)[][]): Promise<T> {
-  const url = `https://${process.env.MODELBIT_WORKSPACE}.${process.env.MODELBIT_REGION}.modelbit.com/v1/${deploymentName}/latest`;
-  const headers = {
-    'Content-Type': 'application/json',
-    'X-Modelbit-Api-Key': process.env.MODELBIT_API_KEY,
-  };
-  const body = {
-    data: batchData,
-  };
-  const response = await axios.post(url, body, { headers });
-  return response.data.data;
+async function callSentiment(texts: string[]) {
+  const { data } = await axios.post(SENTIMENT_URL, { texts });
+  return data.results as { label: string; class_id: number; confidence: number }[];
+}
+
+async function callTopics(texts: string[]) {
+  const { data } = await axios.post(TOPICS_URL, { texts, threshold: 0.3 });
+  return data.results as { predicted_labels: string[]; all_probabilities: Record<string, number> }[];
 }
