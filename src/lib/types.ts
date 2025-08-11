@@ -31,10 +31,10 @@ export interface AnalysisResults {
 }
 
 export type SentimentBatchResult = [number, SentimentResult][];
-export type MultilabelBatchResult = [number, { predicted_labels: string[] }][];
-
+export type MultilabelBatchResult = [number, { predicted_labels: string[]; all_probabilities: { [key: string]: number } }][];
 
 export interface AggregatedResults {
   sentimentCounts: { [key: string]: number };
   labelCounts: { [key: string]: number };
+  topicProbabilities: { [key: string]: number };
 }

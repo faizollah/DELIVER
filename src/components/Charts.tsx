@@ -37,7 +37,7 @@ export function SentimentPie({ label, confidence }: { label: string; confidence:
 
   const options = {
     animation,
-    layout: { padding: 8 },
+    layout: { padding: { left: 12, right: 12, top: 4, bottom: 8 } },
     plugins: {
       legend: { display: true, position: 'bottom' as const },
       tooltip: { enabled: true },
@@ -74,7 +74,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
 
   const options: ChartOptions<'bar'> = {
     animation,
-    layout: { padding: { right: 12 } },
+    layout: { padding: { left: 12, right: 40 } },
     indexAxis: 'y',
     scales: {
       x: {
@@ -84,8 +84,9 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
         ticks: { callback: (v: number | string) => `${Math.round(Number(v) * 100)}%` },
       },
       y: {
+        offset: true,
         grid: { display: false },
-        ticks: { autoSkip: false },
+        ticks: { autoSkip: false, padding: 6 },
       },
     },
     plugins: {
@@ -108,7 +109,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
   };
 
   return (
-    <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm" style={{ height: 400 }}>
+    <div className="rounded-xl border border-slate-300 bg-white/80 p-4 shadow-sm" style={{ height: 420 }}>
       <Bar data={data} options={options} />
     </div>
   );

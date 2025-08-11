@@ -6,10 +6,15 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { AggregatedResults } from '@/lib/types';
+import { AggregatedResults, Review } from '@/lib/types';
 import { TopicsBar } from './Charts';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
+
+export interface PracticeAnalysisProps {
+  analysisResults: AggregatedResults;
+  reviews: Review[];
+}
 
 function buildInsights(sentimentCounts: Record<string, number>, labelCounts: Record<string, number>): string {
   const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0) || 1;
@@ -19,8 +24,8 @@ function buildInsights(sentimentCounts: Record<string, number>, labelCounts: Rec
   return `Most reviews are ${topSent} (${sentPct}%). Frequent themes include ${topTopics.join(' and ')}.`;
 }
 
-export default function PracticeAnalysis({ analysisResults }: { analysisResults: AggregatedResults }) {
-  const { sentimentCounts, labelCounts } = analysisResults;
+export default function PracticeAnalysis({ analysisResults, reviews }: PracticeAnalysisProps) {
+  const { sentimentCounts, labelCounts, topicProbabilities } = analysisResults;
   const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0) || 1;
   const labels = Object.keys(sentimentCounts);
   const values = Object.values(sentimentCounts);
@@ -55,13 +60,7 @@ export default function PracticeAnalysis({ analysisResults }: { analysisResults:
 
   const insights = buildInsights(sentimentCounts as Record<string, number>, labelCounts as Record<string, number>);
 
-  // Normalise topic counts to probabilities (0..1) for the bar chart
-  const topicCounts = labelCounts as Record<string, number>;
-  const topicProbs: Record<string, number> = Object.fromEntries(
-    Object.entries(topicCounts).map(([k, v]) => [k, v / total])
-  );
-
-  const topicEntries = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  const topicEntries = Object.entries(labelCounts).sort((a, b) => b[1] - a[1]).slice(0, 12);
 
   return (
     <div className="space-y-6">
@@ -71,7 +70,7 @@ export default function PracticeAnalysis({ analysisResults }: { analysisResults:
           <h4 className="mb-3 text-sm font-semibold text-slate-700">Overall Sentiment Distribution</h4>
           <Pie data={pieData} options={pieOptions} />
         </div>
-        <TopicsBar probs={topicProbs} />
+        <TopicsBar probs={topicProbabilities} />
       </div>
 
       <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
@@ -94,6 +93,15 @@ export default function PracticeAnalysis({ analysisResults }: { analysisResults:
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+        <h4 className="mb-3 text-sm font-semibold text-slate-700">Reviews (from Google Maps)</h4>
+        <ul className="space-y-3">
+          {reviews.map((r, idx) => (
+            <li key={idx} className="rounded-lg border border-slate-200/70 bg-white p-3 text-slate-800">{r.text}</li>
+          ))}
+        </ul>
       </div>
     </div>
   );

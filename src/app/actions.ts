@@ -107,7 +107,7 @@ export async function analyzePracticeReviews(reviews: Review[]): Promise<{
   const topics = await callTopics(texts);
 
   const sentimentBatchResults: SentimentBatchResult = sentiment.map((s, i) => [i, { sentiment: s.label, confidence: s.confidence }]);
-  const multilabelBatchResults: MultilabelBatchResult = topics.map((t, i) => [i, { predicted_labels: t.predicted_labels }]);
+  const multilabelBatchResults: MultilabelBatchResult = topics.map((t, i) => [i, { predicted_labels: t.predicted_labels, all_probabilities: t.all_probabilities }]);
 
   return { sentimentBatchResults, multilabelBatchResults };
 }
