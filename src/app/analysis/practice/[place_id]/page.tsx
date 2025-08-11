@@ -48,7 +48,7 @@ export default async function PracticeAnalysisPage({ params }: PracticeAnalysisP
   let reviews: Review[] = [];
   try {
     reviews = await getPracticeReviews(place_id);
-  } catch (e) {
+  } catch {
     // Fallback to any reviews that Google returned (likely 0–5)
     reviews = (details.reviews || [])
       .map((r: { text?: string }) => ({ text: r?.text || '' }))

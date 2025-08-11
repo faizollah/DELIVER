@@ -34,6 +34,13 @@ type TopicsAPIResult = {
   all_probabilities: Record<string, number>;
 };
 
+// Minimal type to map Outscraper review shapes
+type OutscraperReview = {
+  review_text?: string;
+  text?: string;
+  review?: string;
+};
+
 export async function searchPractices(query: string): Promise<Practice[]> {
   const url = `https://maps.googleapis.com/maps/api/place/textsearch/json`;
   const params = {
@@ -106,14 +113,14 @@ export async function getPracticeReviews(place_id: string): Promise<Review[]> {
 
     // Response formats vary; handle common shapes
     const container = Array.isArray(data) ? data[0] : (data?.data?.[0] ?? data?.[0] ?? {});
-    const rawReviews = container?.reviews || container?.reviews_data || [];
+    const rawReviews = (container?.reviews || container?.reviews_data || []) as OutscraperReview[];
 
-    const reviews: Review[] = (rawReviews as any[])
-      .map((r) => ({ text: r?.review_text || r?.text || r?.review || '' }))
+    const reviews: Review[] = rawReviews
+      .map((r) => ({ text: r.review_text || r.text || r.review || '' }))
       .filter((r) => r.text && r.text.trim().length > 0);
 
     return reviews;
-  } catch (err) {
+  } catch {
     // Surface a concise error; caller can decide how to handle
     throw new Error('Failed to fetch reviews from Outscraper');
   }
