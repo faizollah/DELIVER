@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "node -r dotenv/config index.js",
-    "build:css": "tailwindcss -i ./public/tailwind.css -o ./public/style.css --minify",
+    "dev": "next dev",
     "build": "prisma generate && next build",
-    "prestart": "npm run build:css"
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
     "@prisma/client": "^6.13.0",
