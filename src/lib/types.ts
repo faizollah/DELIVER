@@ -2,6 +2,7 @@ export interface Practice {
   place_id: string;
   name: string;
   address: string;
+  formatted_address: string;
   rating: number;
   user_ratings_total: number;
 }
