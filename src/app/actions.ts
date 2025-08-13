@@ -100,16 +100,7 @@ interface ApifyReviewItem {
 
 // Fetch Google Maps reviews via Apify (more than 5)
 export async function getPracticeReviews(place_id: string): Promise<Review[]> {
-  // Previous Outscraper implementation kept for reference
-  // try {
-  //   const { data } = await axios.post(OUTSCRAPER_REVIEWS_URL, { query: place_id, sort: 'newest', reviewsLimit: 100 }, { headers: { 'X-API-KEY': process.env.OUTSCRAPER_API_KEY || '' } });
-  //   const container = Array.isArray(data) ? data[0] : (data?.data?.[0] ?? data?.[0] ?? {});
-  //   const raw = (container?.reviews || container?.reviews_data || []) as OutscraperReview[];
-  //   return raw.map((r) => ({ text: r.review_text || r.text || r.review || '' })).filter((r) => r.text.trim());
-  // } catch {}
-
   // Apify implementation: requires Google Maps place URL
-  // Get details (including the URL)
   const details = (await getPracticeDetails(place_id)) as PracticeDetailsWithUrl;
   const mapsUrl = details.maps_url;
   if (!mapsUrl) throw new Error('Google Maps URL not available for this place');
@@ -141,7 +132,14 @@ export async function getPracticeReviews(place_id: string): Promise<Review[]> {
 
 export async function analyzeSingleReview(text: string): Promise<AnalysisResults> {
   const sentiment = await callSentiment([text]);
-  const topics = await callTopics([text]);
+
+  let topics: TopicsAPIResult[];
+  try {
+    topics = await callTopics([text]);
+  } catch {
+    console.warn('Topic modelling unavailable for single review; continuing without topics.');
+    topics = [{ predicted_labels: [], all_probabilities: {} }];
+  }
 
   const firstSent = sentiment[0];
   const firstTopic = topics[0];
@@ -178,7 +176,14 @@ export async function analyzePracticeReviews(reviews: Review[]): Promise<{
 }> {
   const texts = reviews.map((r) => r.text);
   const sentiment = await callSentiment(texts);
-  const topics = await callTopics(texts);
+
+  let topics: TopicsAPIResult[];
+  try {
+    topics = await callTopics(texts);
+  } catch {
+    console.warn('Topic modelling unavailable for practice batch; continuing without topics.');
+    topics = texts.map(() => ({ predicted_labels: [], all_probabilities: {} }));
+  }
 
   const sentimentBatchResults: SentimentBatchResult = sentiment.map((s, i) => [i, { sentiment: s.label, confidence: s.confidence }]);
   const multilabelBatchResults: MultilabelBatchResult = topics.map((t, i) => [i, { predicted_labels: t.predicted_labels, all_probabilities: t.all_probabilities }]);
@@ -188,7 +193,7 @@ export async function analyzePracticeReviews(reviews: Review[]): Promise<{
 
 async function callSentiment(texts: string[]): Promise<SentimentAPIResult[]> {
   try {
-    const { data } = await http.post(SENTIMENT_URL, { texts });
+    const { data } = await http.post(SENTIMENT_URL, { texts }, { timeout: 15000 });
     return data.results as SentimentAPIResult[];
   } catch {
     throw new Error('Sentiment service is unavailable.');
@@ -197,7 +202,7 @@ async function callSentiment(texts: string[]): Promise<SentimentAPIResult[]> {
 
 async function callTopics(texts: string[]): Promise<TopicsAPIResult[]> {
   try {
-    const { data } = await http.post(TOPICS_URL, { texts, threshold: 0.3 });
+    const { data } = await http.post(TOPICS_URL, { texts, threshold: 0.3 }, { timeout: 20000 });
     return data.results as TopicsAPIResult[];
   } catch {
     throw new Error('Topic modelling service is unavailable.');
