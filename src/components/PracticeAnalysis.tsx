@@ -118,11 +118,11 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
     <div className="space-y-6">
       <p className="rounded-xl border border-slate-200/70 bg-white/80 p-4 text-slate-800">{insights}</p>
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm" style={{ minHeight: 400 }}>
+        <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm" style={{ height: 400 }}>
           <h4 className="mb-3 text-sm font-semibold text-slate-700">Overall Sentiment Distribution</h4>
           <Pie data={pieData} options={pieOptions} />
         </div>
-        <div className={`rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm ${isClassifying ? 'animate-pulse' : ''}`} style={{ minHeight: 440 }}>
+        <div className={`rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm ${isClassifying ? 'animate-pulse' : ''}`} style={{ height: 440 }}>
           <div className="mb-3 flex items-center justify-between">
             <h4 className="text-sm font-semibold text-slate-700">Classification (Top probabilities)</h4>
             {isClassifying && (
