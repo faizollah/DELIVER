@@ -137,7 +137,7 @@ export async function analyzeSingleReview(text: string): Promise<AnalysisResults
   try {
     topics = await callTopics([text]);
   } catch {
-    console.warn('Topic modelling unavailable for single review; continuing without topics.');
+    console.warn('Classification service unavailable for single review; continuing without labels.');
     topics = [{ predicted_labels: [], all_probabilities: {} }];
   }
 
@@ -181,7 +181,7 @@ export async function analyzePracticeReviews(reviews: Review[]): Promise<{
   try {
     topics = await callTopics(texts);
   } catch {
-    console.warn('Topic modelling unavailable for practice batch; continuing without topics.');
+    console.warn('Classification service unavailable for practice batch; continuing without labels.');
     topics = texts.map(() => ({ predicted_labels: [], all_probabilities: {} }));
   }
 
@@ -205,6 +205,6 @@ async function callTopics(texts: string[]): Promise<TopicsAPIResult[]> {
     const { data } = await http.post(TOPICS_URL, { texts, threshold: 0.3 }, { timeout: 20000 });
     return data.results as TopicsAPIResult[];
   } catch {
-    throw new Error('Topic modelling service is unavailable.');
+    throw new Error('Classification service is unavailable.');
   }
 }
