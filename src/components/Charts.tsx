@@ -74,7 +74,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
 
   const options: ChartOptions<'bar'> = {
     animation,
-    layout: { padding: { left: 12, right: 40 } },
+    layout: { padding: { left: 16, right: 80 } },
     indexAxis: 'y',
     scales: {
       x: {
@@ -86,7 +86,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
       y: {
         offset: true,
         grid: { display: false },
-        ticks: { autoSkip: false, padding: 6 },
+        ticks: { autoSkip: false, padding: 8 },
       },
     },
     plugins: {
@@ -109,7 +109,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
   };
 
   return (
-    <div className="rounded-xl border border-slate-300 bg-white/80 p-4 shadow-sm" style={{ height: 420 }}>
+    <div className="h-full">
       <Bar data={data} options={options} />
     </div>
   );
