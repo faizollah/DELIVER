@@ -8,6 +8,7 @@ import {
 } from 'chart.js';
 import { AggregatedResults, Review } from '@/lib/types';
 import { TopicsBar } from './Charts';
+import { useEffect, useState } from 'react';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -29,6 +30,39 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
   const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0) || 1;
   const labels = Object.keys(sentimentCounts);
   const values = Object.values(sentimentCounts);
+
+  const [probs, setProbs] = useState<Record<string, number> | null>(topicProbabilities && Object.keys(topicProbabilities).length > 0 ? topicProbabilities : null);
+  const [isClassifying, setIsClassifying] = useState<boolean>(!probs);
+
+  useEffect(() => {
+    if (probs) return;
+    const texts = reviews.map((r) => r.text);
+    if (texts.length === 0) return;
+    setIsClassifying(true);
+    fetch('/api/classify-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texts }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const results: [number, { predicted_labels: string[]; all_probabilities: Record<string, number> }][] = data.results || [];
+        const sums: Record<string, number> = {};
+        results.forEach(([, r]) => {
+          Object.entries(r.all_probabilities || {}).forEach(([k, v]) => {
+            sums[k] = (sums[k] || 0) + Number(v);
+          });
+        });
+        const avg: Record<string, number> = {};
+        const n = results.length || 1;
+        Object.entries(sums).forEach(([k, s]) => (avg[k] = s / n));
+        setProbs(avg);
+      })
+      .catch(() => {
+        setProbs({});
+      })
+      .finally(() => setIsClassifying(false));
+  }, [probs, reviews]);
 
   const pieData = {
     labels: labels.map((l) => l[0].toUpperCase() + l.slice(1)),
@@ -70,7 +104,10 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
           <h4 className="mb-3 text-sm font-semibold text-slate-700">Overall Sentiment Distribution</h4>
           <Pie data={pieData} options={pieOptions} />
         </div>
-        <TopicsBar probs={topicProbabilities} />
+        <div className={`rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm ${isClassifying ? 'animate-pulse' : ''}`} style={{ height: 400 }}>
+          <h4 className="mb-3 text-sm font-semibold text-slate-700">Classification (Top probabilities)</h4>
+          {probs ? <TopicsBar probs={probs} /> : <div className="h-full w-full flex items-center justify-center text-slate-500">Waiting for classification...</div>}
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">

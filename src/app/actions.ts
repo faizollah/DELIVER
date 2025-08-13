@@ -170,6 +170,23 @@ export async function analyzeSingleReview(text: string): Promise<AnalysisResults
   return { sentimentResult, multilabelResult };
 }
 
+// New: separate sentiment-first pathway for large batches
+export async function analyzeSentimentBatch(reviews: Review[]): Promise<SentimentBatchResult> {
+  const texts = reviews.map((r) => r.text);
+  const sentiment = await callSentiment(texts);
+  return sentiment.map((s, i) => [i, { sentiment: s.label, confidence: s.confidence }]);
+}
+
+export async function classifyTexts(texts: string[]): Promise<MultilabelBatchResult> {
+  try {
+    const topics = await callTopics(texts);
+    return topics.map((t, i) => [i, { predicted_labels: t.predicted_labels, all_probabilities: t.all_probabilities }]);
+  } catch {
+    // Return empty results to keep UI responsive
+    return texts.map((_, i) => [i, { predicted_labels: [], all_probabilities: {} }]);
+  }
+}
+
 export async function analyzePracticeReviews(reviews: Review[]): Promise<{
   sentimentBatchResults: SentimentBatchResult;
   multilabelBatchResults: MultilabelBatchResult;

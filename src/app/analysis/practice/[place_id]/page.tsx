@@ -1,36 +1,15 @@
-import { getPracticeDetails, analyzePracticeReviews, getPracticeReviews } from '@/app/actions';
+import { getPracticeDetails, getPracticeReviews, analyzeSentimentBatch } from '@/app/actions';
 import Header from '@/components/Header';
 import PracticeAnalysis from '@/components/PracticeAnalysis';
-import { SentimentBatchResult, MultilabelBatchResult, AggregatedResults, Review } from '@/lib/types';
+import { AggregatedResults, Review } from '@/lib/types';
 import React from 'react';
 
-function aggregateResults(sentimentResults: SentimentBatchResult, multilabelResults: MultilabelBatchResult): AggregatedResults {
+function aggregateSentiment(sentimentBatch: [number, { sentiment: string; confidence: number }][]): AggregatedResults {
     const sentimentCounts: { [key: string]: number } = {};
-    const labelCounts: { [key: string]: number } = {};
-    const topicProbSums: { [key: string]: number } = {};
-
-    sentimentResults.forEach(result => {
-        const sentiment = result[1].sentiment;
-        sentimentCounts[sentiment] = (sentimentCounts[sentiment] || 0) + 1;
+    sentimentBatch.forEach(([, r]) => {
+        sentimentCounts[r.sentiment] = (sentimentCounts[r.sentiment] || 0) + 1;
     });
-
-    // Count topics and accumulate probabilities (to average later)
-    multilabelResults.forEach(result => {
-        const { predicted_labels, all_probabilities } = result[1] as { predicted_labels: string[]; all_probabilities: Record<string, number> };
-        predicted_labels.forEach((label: string) => {
-            labelCounts[label] = (labelCounts[label] || 0) + 1;
-        });
-        Object.entries(all_probabilities || {}).forEach(([label, prob]) => {
-            topicProbSums[label] = (topicProbSums[label] || 0) + Number(prob);
-        });
-    });
-
-    const numReviews = multilabelResults.length || 1;
-    const topicProbabilities: { [key: string]: number } = Object.fromEntries(
-      Object.entries(topicProbSums).map(([k, sum]) => [k, sum / numReviews])
-    );
-
-    return { sentimentCounts, labelCounts, topicProbabilities };
+    return { sentimentCounts, labelCounts: {}, topicProbabilities: {} };
 }
 
 interface PracticeAnalysisPageProps { params: Promise<{ place_id: string }> }
@@ -39,24 +18,16 @@ export default async function PracticeAnalysisPage({ params }: PracticeAnalysisP
   const { place_id } = await params;
   const details = await getPracticeDetails(place_id);
 
-  // Old (max 5) using Google Place Details embedded reviews:
-  // const reviews: Review[] = (details.reviews || [])
-  //   .map((r: { text?: string }) => ({ text: r.text || '' }))
-  //   .filter((r: Review) => r.text.length > 0);
-
-  // New: fetch more reviews via Outscraper
+  // Fetch more reviews via Apify (fallback handled in actions)
   let reviews: Review[] = [];
   try {
     reviews = await getPracticeReviews(place_id);
   } catch {
-    // Fallback to any reviews that Google returned (likely 0–5)
-    reviews = (details.reviews || [])
-      .map((r: { text?: string }) => ({ text: r?.text || '' }))
-      .filter((r: Review) => r.text.length > 0);
+    reviews = [];
   }
 
-  const analysisResults = await analyzePracticeReviews(reviews);
-  const aggregatedResults = aggregateResults(analysisResults.sentimentBatchResults, analysisResults.multilabelBatchResults);
+  const sentimentBatch = await analyzeSentimentBatch(reviews);
+  const aggregatedResults = aggregateSentiment(sentimentBatch);
 
   const AnalysisComp = PracticeAnalysis as unknown as (p: { analysisResults: AggregatedResults; reviews: Review[] }) => React.ReactElement;
 
