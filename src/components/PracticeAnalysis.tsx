@@ -114,17 +114,15 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
 
   const insights = buildInsights(sentimentCounts as Record<string, number>, labelCounts as Record<string, number>);
 
-  const topicEntries = Object.entries(labelCounts).sort((a, b) => b[1] - a[1]).slice(0, 12);
-
   return (
     <div className="space-y-6">
       <p className="rounded-xl border border-slate-200/70 bg-white/80 p-4 text-slate-800">{insights}</p>
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm" style={{ height: 360 }}>
+        <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm" style={{ minHeight: 400 }}>
           <h4 className="mb-3 text-sm font-semibold text-slate-700">Overall Sentiment Distribution</h4>
           <Pie data={pieData} options={pieOptions} />
         </div>
-        <div className={`rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm ${isClassifying ? 'animate-pulse' : ''}`} style={{ height: 420 }}>
+        <div className={`rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm ${isClassifying ? 'animate-pulse' : ''}`} style={{ minHeight: 440 }}>
           <div className="mb-3 flex items-center justify-between">
             <h4 className="text-sm font-semibold text-slate-700">Classification (Top probabilities)</h4>
             {isClassifying && (
@@ -133,30 +131,8 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
               </div>
             )}
           </div>
-          {probs ? <TopicsBar probs={probs} /> : <div className="h-full w-full flex items-center justify-center text-slate-500">Please wait…</div>}
+          {probs ? <TopicsBar probs={probs} /> : <div className="h-[360px] w-full flex items-center justify-center text-slate-500">Please wait…</div>}
         </div>
-      </div>
-
-      <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-        <h4 className="mb-3 text-sm font-semibold text-slate-700">Top Topics</h4>
-        <table className="w-full text-sm">
-          <thead className="text-slate-500">
-            <tr>
-              <th className="text-left py-2">Topic</th>
-              <th className="text-right py-2">Count</th>
-              <th className="text-right py-2">% of reviews</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topicEntries.map(([topic, count]) => (
-              <tr key={topic} className="border-t border-slate-100">
-                <td className="py-2 text-slate-800">{topic}</td>
-                <td className="py-2 text-right text-slate-800">{count}</td>
-                <td className="py-2 text-right text-slate-800">{((count / total) * 100).toFixed(1)}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
 
       <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
