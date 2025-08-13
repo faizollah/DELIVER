@@ -8,7 +8,7 @@ import {
 } from 'chart.js';
 import { AggregatedResults, Review } from '@/lib/types';
 import { TopicsBar } from './Charts';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -31,56 +31,58 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
   const labels = Object.keys(sentimentCounts);
   const values = Object.values(sentimentCounts);
 
-  const [probs, setProbs] = useState<Record<string, number> | null>(topicProbabilities && Object.keys(topicProbabilities).length > 0 ? topicProbabilities : null);
-  const [isClassifying, setIsClassifying] = useState<boolean>(!probs);
+  const initialProbs = useMemo(() => (topicProbabilities && Object.keys(topicProbabilities).length > 0 ? topicProbabilities : null), [topicProbabilities]);
+  const [probs, setProbs] = useState<Record<string, number> | null>(initialProbs);
+  const [progress, setProgress] = useState<number>(0);
+  const [isClassifying, setIsClassifying] = useState<boolean>(!initialProbs);
 
   useEffect(() => {
-    if (probs) return;
-    const texts = reviews.map((r) => r.text);
+    if (initialProbs) return;
+    const texts = reviews.map((r) => r.text).filter(Boolean);
     if (texts.length === 0) return;
 
-    let cancelled = false;
+    const chunkSize = 10;
+    const totalCount = texts.length;
+    let done = 0;
 
-    const fetchWithRetry = async () => {
-      setIsClassifying(true);
-      const start = Date.now();
-      let attempt = 0;
-      let backoff = 800;
-      while (!cancelled && Date.now() - start < 60000) { // retry up to 60s
-        try {
-          const res = await fetch('/api/classify-batch', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ texts }),
-          });
-          const data = await res.json();
-          const results: [number, { predicted_labels: string[]; all_probabilities: Record<string, number> }][] = data.results || [];
-          const sums: Record<string, number> = {};
-          results.forEach(([, r]) => {
-            Object.entries(r.all_probabilities || {}).forEach(([k, v]) => {
-              sums[k] = (sums[k] || 0) + Number(v);
-            });
-          });
-          const avg: Record<string, number> = {};
-          const n = results.length || 1;
-          Object.entries(sums).forEach(([k, s]) => (avg[k] = s / n));
-          if (Object.keys(avg).length > 0) {
-            if (!cancelled) setProbs(avg);
-            break;
-          }
-        } catch {
-          // ignore and retry
-        }
-        await new Promise((r) => setTimeout(r, backoff));
-        attempt += 1;
-        backoff = Math.min(backoff * 1.6, 4000);
-      }
-      if (!cancelled) setIsClassifying(false);
+    const sums: Record<string, number> = {};
+
+    const classifyChunk = async (chunk: string[]) => {
+      const res = await fetch('/api/classify-chunk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texts: chunk }),
+      });
+      const data = await res.json();
+      const results: [number, { predicted_labels: string[]; all_probabilities: Record<string, number> }][] = data.results || [];
+      results.forEach(([, r]) => {
+        Object.entries(r.all_probabilities || {}).forEach(([k, v]) => {
+          sums[k] = (sums[k] || 0) + Number(v);
+        });
+      });
+      done += chunk.length;
+      setProgress(Math.round((done / totalCount) * 100));
     };
 
-    fetchWithRetry();
-    return () => { cancelled = true; };
-  }, [probs, reviews]);
+    const run = async () => {
+      setIsClassifying(true);
+      for (let i = 0; i < texts.length; i += chunkSize) {
+        const batch = texts.slice(i, i + chunkSize);
+        try {
+          await classifyChunk(batch);
+        } catch {
+          // continue with next chunk
+        }
+      }
+      const avg: Record<string, number> = {};
+      const n = totalCount || 1;
+      Object.entries(sums).forEach(([k, s]) => (avg[k] = s / n));
+      setProbs(avg);
+      setIsClassifying(false);
+    };
+
+    run();
+  }, [initialProbs, reviews]);
 
   const pieData = {
     labels: labels.map((l) => l[0].toUpperCase() + l.slice(1)),
@@ -122,9 +124,16 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
           <h4 className="mb-3 text-sm font-semibold text-slate-700">Overall Sentiment Distribution</h4>
           <Pie data={pieData} options={pieOptions} />
         </div>
-        <div className={`rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm ${isClassifying ? 'animate-pulse' : ''}`} style={{ height: 400 }}>
-          <h4 className="mb-3 text-sm font-semibold text-slate-700">Classification (Top probabilities)</h4>
-          {probs ? <TopicsBar probs={probs} /> : <div className="h-full w-full flex items-center justify-center text-slate-500">Waiting for classification...</div>}
+        <div className={`rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm ${isClassifying ? 'animate-pulse' : ''}`} style={{ height: 420 }}>
+          <div className="mb-3 flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-slate-700">Classification (Top probabilities)</h4>
+            {isClassifying && (
+              <div className="w-40 h-2 rounded bg-slate-200 overflow-hidden">
+                <div className="h-full bg-sky-500 transition-all" style={{ width: `${progress}%` }} />
+              </div>
+            )}
+          </div>
+          {probs ? <TopicsBar probs={probs} /> : <div className="h-full w-full flex items-center justify-center text-slate-500">Please wait…</div>}
         </div>
       </div>
 
