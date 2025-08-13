@@ -37,6 +37,9 @@ type GooglePlace = {
   url?: string;
 };
 
+// Extend details with maps_url helper for internal flow
+type PracticeDetailsWithUrl = PracticeDetails & { maps_url?: string };
+
 type SentimentAPIResult = { label: string; class_id: number; confidence: number };
 
 type TopicsAPIResult = {
@@ -75,7 +78,7 @@ export async function getPracticeDetails(place_id: string): Promise<PracticeDeta
   };
   const response = await http.get(url, { params });
   const result = response.data.result as GooglePlace;
-  const details: PracticeDetails = {
+  const details: PracticeDetailsWithUrl = {
     place_id: result.place_id,
     name: result.name,
     address: result.formatted_address,
@@ -83,10 +86,16 @@ export async function getPracticeDetails(place_id: string): Promise<PracticeDeta
     rating: result.rating,
     user_ratings_total: result.user_ratings_total,
     reviews: [],
+    maps_url: result.url,
   };
-  // Attach url on the object (non-typed field) to use later
-  (details as any).maps_url = result.url;
   return details;
+}
+
+// Apify dataset item minimal shape
+interface ApifyReviewItem {
+  reviewText?: string;
+  text?: string;
+  review?: string;
 }
 
 // Fetch Google Maps reviews via Apify (more than 5)
@@ -101,8 +110,8 @@ export async function getPracticeReviews(place_id: string): Promise<Review[]> {
 
   // Apify implementation: requires Google Maps place URL
   // Get details (including the URL)
-  const details = await getPracticeDetails(place_id);
-  const mapsUrl = (details as any).maps_url as string | undefined;
+  const details = (await getPracticeDetails(place_id)) as PracticeDetailsWithUrl;
+  const mapsUrl = details.maps_url;
   if (!mapsUrl) throw new Error('Google Maps URL not available for this place');
 
   const token = process.env.APIFY_TOKEN || '';
@@ -123,8 +132,8 @@ export async function getPracticeReviews(place_id: string): Promise<Review[]> {
   const { items } = await client.dataset(run.defaultDatasetId).listItems();
 
   // Map results to Review[]
-  const reviews: Review[] = (items || [])
-    .map((it: any) => ({ text: (it?.reviewText || it?.text || it?.review || '').toString() }))
+  const reviews: Review[] = (items as ApifyReviewItem[] | undefined || [])
+    .map((it) => ({ text: (it.reviewText || it.text || it.review || '').toString() }))
     .filter((r) => r.text && r.text.trim().length > 0);
 
   return reviews;
