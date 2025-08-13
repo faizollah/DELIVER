@@ -38,30 +38,48 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
     if (probs) return;
     const texts = reviews.map((r) => r.text);
     if (texts.length === 0) return;
-    setIsClassifying(true);
-    fetch('/api/classify-batch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ texts }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const results: [number, { predicted_labels: string[]; all_probabilities: Record<string, number> }][] = data.results || [];
-        const sums: Record<string, number> = {};
-        results.forEach(([, r]) => {
-          Object.entries(r.all_probabilities || {}).forEach(([k, v]) => {
-            sums[k] = (sums[k] || 0) + Number(v);
+
+    let cancelled = false;
+
+    const fetchWithRetry = async () => {
+      setIsClassifying(true);
+      const start = Date.now();
+      let attempt = 0;
+      let backoff = 800;
+      while (!cancelled && Date.now() - start < 60000) { // retry up to 60s
+        try {
+          const res = await fetch('/api/classify-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ texts }),
           });
-        });
-        const avg: Record<string, number> = {};
-        const n = results.length || 1;
-        Object.entries(sums).forEach(([k, s]) => (avg[k] = s / n));
-        setProbs(avg);
-      })
-      .catch(() => {
-        setProbs({});
-      })
-      .finally(() => setIsClassifying(false));
+          const data = await res.json();
+          const results: [number, { predicted_labels: string[]; all_probabilities: Record<string, number> }][] = data.results || [];
+          const sums: Record<string, number> = {};
+          results.forEach(([, r]) => {
+            Object.entries(r.all_probabilities || {}).forEach(([k, v]) => {
+              sums[k] = (sums[k] || 0) + Number(v);
+            });
+          });
+          const avg: Record<string, number> = {};
+          const n = results.length || 1;
+          Object.entries(sums).forEach(([k, s]) => (avg[k] = s / n));
+          if (Object.keys(avg).length > 0) {
+            if (!cancelled) setProbs(avg);
+            break;
+          }
+        } catch {
+          // ignore and retry
+        }
+        await new Promise((r) => setTimeout(r, backoff));
+        attempt += 1;
+        backoff = Math.min(backoff * 1.6, 4000);
+      }
+      if (!cancelled) setIsClassifying(false);
+    };
+
+    fetchWithRetry();
+    return () => { cancelled = true; };
   }, [probs, reviews]);
 
   const pieData = {
