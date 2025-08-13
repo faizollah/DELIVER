@@ -17,7 +17,16 @@ const http = axios.create({ timeout: 10000 });
 
 const SENTIMENT_URL = 'http://38.54.126.14:8081/predict';
 const TOPICS_URL = 'http://38.54.126.14:8082/predict';
-const OUTSCRAPER_REVIEWS_URL = 'https://api.app.outscraper.com/maps/reviews-v3';
+
+// Outscraper (unused now) kept for reference
+// const OUTSCRAPER_REVIEWS_URL = 'https://api.app.outscraper.com/maps/reviews-v3';
+// type OutscraperReview = { review_text?: string; text?: string; review?: string };
+
+// Apify Client (dynamic import to keep edge/server bundles slim)
+async function getApifyClient() {
+  const { ApifyClient } = await import('apify-client');
+  return new ApifyClient({ token: process.env.APIFY_TOKEN || '' });
+}
 
 type GooglePlace = {
   place_id: string;
@@ -25,6 +34,7 @@ type GooglePlace = {
   formatted_address: string;
   rating: number;
   user_ratings_total: number;
+  url?: string;
 };
 
 type SentimentAPIResult = { label: string; class_id: number; confidence: number };
@@ -32,13 +42,6 @@ type SentimentAPIResult = { label: string; class_id: number; confidence: number 
 type TopicsAPIResult = {
   predicted_labels: string[];
   all_probabilities: Record<string, number>;
-};
-
-// Minimal type to map Outscraper review shapes
-type OutscraperReview = {
-  review_text?: string;
-  text?: string;
-  review?: string;
 };
 
 export async function searchPractices(query: string): Promise<Practice[]> {
@@ -65,65 +68,66 @@ export async function getPracticeDetails(place_id: string): Promise<PracticeDeta
   const url = `https://maps.googleapis.com/maps/api/place/details/json`;
   const params = {
     place_id,
-    // NOTE: We previously relied on Google's embedded 'reviews' here (max 5).
-    // fields: 'name,formatted_address,reviews',
-    // Switched to getting all reviews via Outscraper; keep details only:
-    fields: 'name,formatted_address',
+    // Include the Google Maps URL so Apify can use it
+    fields: 'name,formatted_address,url',
     key: process.env.GOOGLE_PLACES_API_KEY,
     language: 'en',
   };
   const response = await http.get(url, { params });
-  // Preserve shape by adding empty reviews array; we fetch them separately now
-  return { ...(response.data.result as PracticeDetails), reviews: (response.data.result?.reviews as Review[]) || [] };
+  const result = response.data.result as GooglePlace;
+  const details: PracticeDetails = {
+    place_id: result.place_id,
+    name: result.name,
+    address: result.formatted_address,
+    formatted_address: result.formatted_address,
+    rating: result.rating,
+    user_ratings_total: result.user_ratings_total,
+    reviews: [],
+  };
+  // Attach url on the object (non-typed field) to use later
+  (details as any).maps_url = result.url;
+  return details;
 }
 
-// Fetch Google Maps reviews via Outscraper (more than 5)
+// Fetch Google Maps reviews via Apify (more than 5)
 export async function getPracticeReviews(place_id: string): Promise<Review[]> {
-  // Previous approach (max 5) using Google Place Details:
-  // const url = `https://maps.googleapis.com/maps/api/place/details/json`;
-  // const params = { place_id, fields: 'reviews', key: process.env.GOOGLE_PLACES_API_KEY };
-  // const res = await http.get(url, { params });
-  // const gReviews = (res.data.result?.reviews || []).map((r: { text?: string }) => ({ text: r.text || '' }));
-  // return gReviews;
+  // Previous Outscraper implementation kept for reference
+  // try {
+  //   const { data } = await axios.post(OUTSCRAPER_REVIEWS_URL, { query: place_id, sort: 'newest', reviewsLimit: 100 }, { headers: { 'X-API-KEY': process.env.OUTSCRAPER_API_KEY || '' } });
+  //   const container = Array.isArray(data) ? data[0] : (data?.data?.[0] ?? data?.[0] ?? {});
+  //   const raw = (container?.reviews || container?.reviews_data || []) as OutscraperReview[];
+  //   return raw.map((r) => ({ text: r.review_text || r.text || r.review || '' })).filter((r) => r.text.trim());
+  // } catch {}
 
-  // Outscraper implementation
-  const apiKey = process.env.OUTSCRAPER_API_KEY || '';
-  if (!apiKey) {
-    // Fail clearly if key missing; caller can fallback
-    throw new Error('OUTSCRAPER_API_KEY is not set');
-  }
+  // Apify implementation: requires Google Maps place URL
+  // Get details (including the URL)
+  const details = await getPracticeDetails(place_id);
+  const mapsUrl = (details as any).maps_url as string | undefined;
+  if (!mapsUrl) throw new Error('Google Maps URL not available for this place');
 
-  try {
-    const { data } = await axios.post(
-      OUTSCRAPER_REVIEWS_URL,
-      {
-        // Outscraper accepts place_id or place URL in 'query'
-        query: place_id,
-        sort: 'newest',
-        reviewsLimit: 100,
-      },
-      {
-        headers: {
-          'X-API-KEY': apiKey,
-          'Content-Type': 'application/json',
-        },
-        timeout: 20000,
-      }
-    );
+  const token = process.env.APIFY_TOKEN || '';
+  if (!token) throw new Error('APIFY_TOKEN is not set');
 
-    // Response formats vary; handle common shapes
-    const container = Array.isArray(data) ? data[0] : (data?.data?.[0] ?? data?.[0] ?? {});
-    const rawReviews = (container?.reviews || container?.reviews_data || []) as OutscraperReview[];
+  const client = await getApifyClient();
 
-    const reviews: Review[] = rawReviews
-      .map((r) => ({ text: r.review_text || r.text || r.review || '' }))
-      .filter((r) => r.text && r.text.trim().length > 0);
+  const input = {
+    startUrls: [{ url: mapsUrl }],
+    maxReviews: 100,
+    reviewsSort: 'newest',
+    language: 'en',
+    reviewsOrigin: 'all',
+    personalData: true,
+  } as Record<string, unknown>;
 
-    return reviews;
-  } catch {
-    // Surface a concise error; caller can decide how to handle
-    throw new Error('Failed to fetch reviews from Outscraper');
-  }
+  const run = await client.actor('Xb8osYTtOjlsgI6k9').call(input);
+  const { items } = await client.dataset(run.defaultDatasetId).listItems();
+
+  // Map results to Review[]
+  const reviews: Review[] = (items || [])
+    .map((it: any) => ({ text: (it?.reviewText || it?.text || it?.review || '').toString() }))
+    .filter((r) => r.text && r.text.trim().length > 0);
+
+  return reviews;
 }
 
 export async function analyzeSingleReview(text: string): Promise<AnalysisResults> {
