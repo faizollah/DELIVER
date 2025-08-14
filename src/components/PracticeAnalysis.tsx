@@ -124,16 +124,17 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
         </div>
         <div className={`rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm ${isClassifying ? 'animate-pulse' : ''}`} style={{ height: 550 }}>
           <div className="mb-3 flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-slate-700">Classification (Top probabilities)</h4>
+            <h4 className="text-sm font-semibold text-slate-700">Topic intensity (average confidence across reviews)</h4>
             {isClassifying && (
               <div className="w-40 h-2 rounded bg-slate-200 overflow-hidden">
                 <div className="h-full bg-sky-500 transition-all" style={{ width: `${progress}%` }} />
               </div>
             )}
           </div>
-          <div className="h-[470px]">
+          <div className="h-[420px]">
             {probs ? <TopicsBar probs={probs} /> : <div className="h-full w-full flex items-center justify-center text-slate-500">Please wait…</div>}
           </div>
+          <p className="mt-3 text-xs text-slate-600">Each bar shows the average model confidence that a review mentions the topic. It reflects intensity across all reviews, not the share of reviews. For “share”, we can instead show the percentage of reviews where the topic was selected.</p>
         </div>
       </div>
 

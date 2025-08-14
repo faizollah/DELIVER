@@ -63,7 +63,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
     labels,
     datasets: [
       {
-        label: 'Probability',
+        label: 'Average confidence',
         data: values,
         backgroundColor: labels.map((_, i) => `hsl(${(i * 30) % 360} 90% 60% / 0.85)`),
         borderRadius: 6,
@@ -99,7 +99,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
       },
       title: {
         display: true,
-        text: 'Topics (Top probabilities)',
+        text: 'Topic intensity (average confidence across reviews)',
         color: '#0f172a',
         font: { weight: 600 },
       },
