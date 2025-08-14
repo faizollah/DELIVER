@@ -35,7 +35,7 @@ export default async function PracticeAnalysisPage({ params }: PracticeAnalysisP
     <div className="bg-gray-50 min-h-screen">
       <div className="container mx-auto px-6 py-8">
         <Header />
-        <main className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
+        <main className="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-md">
           <h2 className="text-3xl font-bold text-center mb-2">{details.name}</h2>
           <p className="text-center text-slate-600">{details.formatted_address}</p>
           <p className="text-center text-slate-500 mb-6">{reviews.length} reviews analysed</p>

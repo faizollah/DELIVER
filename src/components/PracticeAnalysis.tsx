@@ -24,7 +24,8 @@ function buildInsights(sentimentCounts: Record<string, number>, labelCounts: Rec
   const topSent = Object.entries(sentimentCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'unknown';
   const topTopics = Object.entries(labelCounts).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => k);
   const sentPct = ((sentimentCounts[topSent] || 0) / total * 100).toFixed(0);
-  return `Most reviews are ${topSent} (${sentPct}%). Frequent themes include ${topTopics.join(' and ')}.`;
+  const themes = topTopics.length > 0 ? topTopics.join(' and ') : 'no single dominant themes';
+  return `Most reviews are ${topSent} (${sentPct}%). Frequent themes include ${themes}.`;
 }
 
 export default function PracticeAnalysis({ analysisResults, reviews }: PracticeAnalysisProps) {
@@ -177,8 +178,8 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
           </div>
           <p className="mt-3 text-xs text-slate-600">
             {metric === 'coverage'
-              ? 'Bars show the percentage of reviews where the topic was selected by the classifier.'
-              : 'Bars show the average model confidence that a review mentions the topic.'}
+              ? 'Coverage shows the share of reviews where each topic was selected (e.g., 40% means 40% of reviews explicitly mention that topic).'
+              : 'Intensity shows the average model confidence that a random review mentions the topic.'}
           </p>
         </div>
       </div>
