@@ -41,6 +41,7 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
   const [progress, setProgress] = useState<number>(0);
   const [isClassifying, setIsClassifying] = useState<boolean>(!initialProbs);
   const [coocPairs, setCoocPairs] = useState<Array<{ a: string; b: string; count: number }>>([]);
+  const [showReviews, setShowReviews] = useState<boolean>(false);
 
   useEffect(() => {
     if (initialProbs) return;
@@ -161,7 +162,7 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
           <Pie data={pieData} options={pieOptions} />
         </div>
         <div className={`rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm ${isClassifying ? 'animate-pulse' : ''}`} style={{ height: 550 }}>
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h4 className="text-sm font-semibold text-slate-700">{metric === 'coverage' ? 'Topic coverage (% of reviews)' : 'Topic intensity (average confidence across reviews)'}</h4>
             <div className="flex items-center gap-2">
               <button onClick={() => setMetric('intensity')} className={`px-3 py-1 text-xs rounded border ${metric === 'intensity' ? 'bg-sky-600 text-white border-sky-600' : 'bg-white text-slate-700 border-slate-300'}`}>Intensity</button>
@@ -185,6 +186,17 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
       </div>
 
       <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+        <h4 className="mb-2 text-sm font-semibold text-slate-700">Interpreting intensity (confidence)</h4>
+        <p className="text-sm text-slate-800">By trusting the model as a reasonably trained expert, its confidence can act as a proxy for the clarity and strength of the signal in your data.</p>
+        <ul className="mt-2 text-sm text-slate-700 list-disc pl-5 space-y-1">
+          <li><span className="font-medium">High average confidence</span> (e.g., 90% for Staff Interaction): language is direct and unambiguous—the signal is strong.</li>
+          <li><span className="font-medium">Low average confidence</span> (e.g., 30% for Cost and Value): language is vague/indirect—the signal is weak or mixed.</li>
+          <li><span className="font-medium">Prominence and priorities</span>: compare scores to see what patients are “shouting” about versus “murmuring” about.</li>
+          <li><span className="font-medium">Per‑review reading</span>: one label at ~95% is a focused review; many labels around 40–50% suggests a broader, less focused review.</li>
+        </ul>
+      </div>
+
+      <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
         <h4 className="mb-3 text-sm font-semibold text-slate-700">Topic co‑occurrence (labels appearing together)</h4>
         {coocPairs.length === 0 ? (
           <p className="text-sm text-slate-600">Computed while classification runs. This highlights which topics tend to appear together in the same reviews.</p>
@@ -199,12 +211,14 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
       </div>
 
       <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
-        <h4 className="mb-3 text-sm font-semibold text-slate-700">Reviews (from Google Maps)</h4>
-        <ul className="space-y-3">
-          {reviews.map((r, idx) => (
-            <li key={idx} className="rounded-lg border border-slate-200/70 bg-white p-3 text-slate-800">{r.text}</li>
-          ))}
-        </ul>
+        <button onClick={() => setShowReviews((s) => !s)} className="text-sm font-semibold text-slate-700 flex items-center gap-2">Reviews (from Google Maps) <span className="text-xs font-normal text-slate-500">{showReviews ? 'Hide' : 'Show'}</span></button>
+        {showReviews && (
+          <ul className="mt-3 space-y-3">
+            {reviews.map((r, idx) => (
+              <li key={idx} className="rounded-lg border border-slate-200/70 bg-white p-3 text-slate-800">{r.text}</li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

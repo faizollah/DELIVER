@@ -74,7 +74,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
 
   const options: ChartOptions<'bar'> = {
     animation,
-    layout: { padding: { left: 16, right: 80 } },
+    layout: { padding: { left: 18, right: 120 } },
     indexAxis: 'y',
     scales: {
       x: {
@@ -86,7 +86,7 @@ export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>;
       y: {
         offset: true,
         grid: { display: false },
-        ticks: { autoSkip: false, padding: 8 },
+        ticks: { autoSkip: false, padding: 10 },
       },
     },
     plugins: {
