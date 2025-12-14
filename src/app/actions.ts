@@ -15,8 +15,8 @@ import {
 
 const http = axios.create({ timeout: 10000 });
 
-const SENTIMENT_URL = 'http://38.54.126.14:8081/predict';
-const TOPICS_URL = 'http://38.54.126.14:8082/predict';
+const SENTIMENT_URL = 'http://173.249.57.169:8081/predict';
+const TOPICS_URL = 'http://173.249.57.169:8082/predict';
 
 // Outscraper (unused now) kept for reference
 // const OUTSCRAPER_REVIEWS_URL = 'https://api.app.outscraper.com/maps/reviews-v3';
