@@ -35,8 +35,9 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
   const labels = Object.keys(sentimentCounts);
   const values = Object.values(sentimentCounts);
 
-  const initialIntensity = useMemo(() => (themeIntensity && Object.keys(themeIntensity).length > 0 ? themeIntensity : null), [themeIntensity]);
-  const initialCoverage = useMemo(() => (themeCoverage && Object.keys(themeCoverage).length > 0 ? themeCoverage : null), [themeCoverage]);
+  const hasThemeData = (data?: Record<string, number>) => Boolean(data && Object.values(data).some((v) => v > 0));
+  const initialIntensity = useMemo(() => (hasThemeData(themeIntensity) ? themeIntensity : null), [themeIntensity]);
+  const initialCoverage = useMemo(() => (hasThemeData(themeCoverage) ? themeCoverage : null), [themeCoverage]);
 
   const [intensity, setIntensity] = useState<Record<string, number> | null>(initialIntensity);
   const [coverage, setCoverage] = useState<Record<string, number> | null>(initialCoverage);
@@ -152,10 +153,7 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
 
   const insights = buildInsights(sentimentCounts as Record<string, number>, coverage || themeCoverage || {});
 
-  const currentData =
-    metric === 'coverage'
-      ? coverage || themeCoverage || null
-      : intensity || themeIntensity || null;
+  const currentData = metric === 'coverage' ? coverage : intensity;
 
   return (
     <div className="space-y-6">
