@@ -54,8 +54,10 @@ export function SentimentPie({ label, confidence }: { label: string; confidence:
   );
 }
 
-export function TopicsBar({ probs, topN = 12 }: { probs: Record<string, number>; topN?: number }) {
-  const entries = Object.entries(probs || {}).sort((a, b) => b[1] - a[1]).slice(0, topN);
+export function TopicsBar({ probs, topN }: { probs: Record<string, number>; topN?: number }) {
+  const entries = Object.entries(probs || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN ?? Object.keys(probs || {}).length);
   const labels = entries.map(([k]) => k);
   const values = entries.map(([, v]) => Number(v));
 
