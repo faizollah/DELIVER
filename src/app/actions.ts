@@ -2,6 +2,7 @@
 
 import axios from 'axios';
 import prisma from '@/lib/prisma';
+import { processClassifierResponse, aggregatePracticeThemes, createEmptyThemeMap, ThemeResult } from '@/lib/themes';
 import {
   Practice,
   PracticeDetails,
@@ -45,6 +46,7 @@ type SentimentAPIResult = { label: string; class_id: number; confidence: number 
 type TopicsAPIResult = {
   predicted_labels: string[];
   all_probabilities: Record<string, number>;
+  threshold?: number;
 };
 
 export async function searchPractices(query: string): Promise<Practice[]> {
@@ -143,6 +145,7 @@ export async function analyzeSingleReview(text: string): Promise<AnalysisResults
 
   const firstSent = sentiment[0];
   const firstTopic = topics[0];
+  const themeResult = processClassifierResponse(firstTopic);
 
   const sentimentResult: SentimentResult = {
     sentiment: firstSent.label,
@@ -150,8 +153,9 @@ export async function analyzeSingleReview(text: string): Promise<AnalysisResults
   };
 
   const multilabelResult: MultilabelResult = {
-    predicted_labels: firstTopic.predicted_labels,
-    all_probabilities: firstTopic.all_probabilities,
+    predictedThemes: themeResult.predictedThemes,
+    themeProbabilities: themeResult.themeProbabilities,
+    threshold: themeResult.threshold,
   };
 
   // Best-effort logging: ignore DB errors in serverless env
@@ -180,16 +184,17 @@ export async function analyzeSentimentBatch(reviews: Review[]): Promise<Sentimen
 export async function classifyTexts(texts: string[]): Promise<MultilabelBatchResult> {
   try {
     const topics = await callTopics(texts);
-    return topics.map((t, i) => [i, { predicted_labels: t.predicted_labels, all_probabilities: t.all_probabilities }]);
+    return topics.map((t, i) => [i, processClassifierResponse(t)]);
   } catch {
     // Return empty results to keep UI responsive
-    return texts.map((_, i) => [i, { predicted_labels: [], all_probabilities: {} }]);
+    return texts.map((_, i) => [i, { predictedThemes: [], themeProbabilities: createEmptyThemeMap() }]);
   }
 }
 
 export async function analyzePracticeReviews(reviews: Review[]): Promise<{
   sentimentBatchResults: SentimentBatchResult;
   multilabelBatchResults: MultilabelBatchResult;
+  themeAggregates: ReturnType<typeof aggregatePracticeThemes>;
 }> {
   const texts = reviews.map((r) => r.text);
   const sentiment = await callSentiment(texts);
@@ -203,9 +208,11 @@ export async function analyzePracticeReviews(reviews: Review[]): Promise<{
   }
 
   const sentimentBatchResults: SentimentBatchResult = sentiment.map((s, i) => [i, { sentiment: s.label, confidence: s.confidence }]);
-  const multilabelBatchResults: MultilabelBatchResult = topics.map((t, i) => [i, { predicted_labels: t.predicted_labels, all_probabilities: t.all_probabilities }]);
+  const themeResults: ThemeResult[] = topics.map((t) => processClassifierResponse(t));
+  const multilabelBatchResults: MultilabelBatchResult = themeResults.map((t, i) => [i, t]);
+  const themeAggregates = aggregatePracticeThemes(themeResults);
 
-  return { sentimentBatchResults, multilabelBatchResults };
+  return { sentimentBatchResults, multilabelBatchResults, themeAggregates };
 }
 
 async function callSentiment(texts: string[]): Promise<SentimentAPIResult[]> {

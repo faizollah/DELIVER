@@ -1,15 +1,15 @@
-import { getPracticeDetails, getPracticeReviews, analyzeSentimentBatch } from '@/app/actions';
+import { getPracticeDetails, getPracticeReviews, analyzePracticeReviews, analyzeSentimentBatch } from '@/app/actions';
 import Header from '@/components/Header';
 import PracticeAnalysis from '@/components/PracticeAnalysis';
 import { AggregatedResults, Review } from '@/lib/types';
 import React from 'react';
 
-function aggregateSentiment(sentimentBatch: [number, { sentiment: string; confidence: number }][]): AggregatedResults {
+function aggregateSentiment(sentimentBatch: [number, { sentiment: string; confidence: number }][]) {
     const sentimentCounts: { [key: string]: number } = {};
     sentimentBatch.forEach(([, r]) => {
         sentimentCounts[r.sentiment] = (sentimentCounts[r.sentiment] || 0) + 1;
     });
-    return { sentimentCounts, labelCounts: {}, topicProbabilities: {} };
+    return sentimentCounts;
 }
 
 interface PracticeAnalysisPageProps { params: Promise<{ place_id: string }> }
@@ -26,8 +26,19 @@ export default async function PracticeAnalysisPage({ params }: PracticeAnalysisP
     reviews = [];
   }
 
-  const sentimentBatch = await analyzeSentimentBatch(reviews);
-  const aggregatedResults = aggregateSentiment(sentimentBatch);
+  const aggregatedResults: AggregatedResults = { sentimentCounts: {}, themeCoverage: {}, themeIntensity: {} };
+
+  if (reviews.length > 0) {
+    try {
+      const { sentimentBatchResults, themeAggregates } = await analyzePracticeReviews(reviews);
+      aggregatedResults.sentimentCounts = aggregateSentiment(sentimentBatchResults);
+      aggregatedResults.themeCoverage = themeAggregates.coverage;
+      aggregatedResults.themeIntensity = themeAggregates.intensity;
+    } catch {
+      const sentimentBatch = await analyzeSentimentBatch(reviews);
+      aggregatedResults.sentimentCounts = aggregateSentiment(sentimentBatch);
+    }
+  }
 
   const AnalysisComp = PracticeAnalysis as unknown as (p: { analysisResults: AggregatedResults; reviews: Review[] }) => React.ReactElement;
 

@@ -21,8 +21,9 @@ export interface SentimentResult {
 }
 
 export interface MultilabelResult {
-  predicted_labels: string[];
-  all_probabilities: { [key: string]: number };
+  predictedThemes: string[];
+  themeProbabilities: { [key: string]: number };
+  threshold?: number;
 }
 
 export interface AnalysisResults {
@@ -31,10 +32,10 @@ export interface AnalysisResults {
 }
 
 export type SentimentBatchResult = [number, SentimentResult][];
-export type MultilabelBatchResult = [number, { predicted_labels: string[]; all_probabilities: { [key: string]: number } }][];
+export type MultilabelBatchResult = [number, MultilabelResult][];
 
 export interface AggregatedResults {
   sentimentCounts: { [key: string]: number };
-  labelCounts: { [key: string]: number };
-  topicProbabilities: { [key: string]: number };
+  themeCoverage: { [key: string]: number };
+  themeIntensity: { [key: string]: number };
 }

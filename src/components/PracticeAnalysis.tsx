@@ -6,9 +6,10 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { AggregatedResults, Review } from '@/lib/types';
+import { AggregatedResults, Review, MultilabelResult } from '@/lib/types';
 import { TopicsBar } from './Charts';
 import { useEffect, useMemo, useState } from 'react';
+import { aggregatePracticeThemes, ThemeResult } from '@/lib/themes';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -17,43 +18,50 @@ export interface PracticeAnalysisProps {
   reviews: Review[];
 }
 
-type BatchItem = [number, { predicted_labels: string[]; all_probabilities: Record<string, number> }];
+type BatchItem = [number, MultilabelResult];
 
-function buildInsights(sentimentCounts: Record<string, number>, labelCounts: Record<string, number>): string {
+function buildInsights(sentimentCounts: Record<string, number>, coverage: Record<string, number>): string {
   const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0) || 1;
   const topSent = Object.entries(sentimentCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'unknown';
-  const topTopics = Object.entries(labelCounts).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => k);
+  const topTopics = Object.entries(coverage || {}).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => k);
   const sentPct = ((sentimentCounts[topSent] || 0) / total * 100).toFixed(0);
   const themes = topTopics.length > 0 ? topTopics.join(' and ') : 'no single dominant themes';
   return `Most reviews are ${topSent} (${sentPct}%). Frequent themes include ${themes}.`;
 }
 
 export default function PracticeAnalysis({ analysisResults, reviews }: PracticeAnalysisProps) {
-  const { sentimentCounts, labelCounts, topicProbabilities } = analysisResults;
+  const { sentimentCounts, themeCoverage, themeIntensity } = analysisResults;
   const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0) || 1;
   const labels = Object.keys(sentimentCounts);
   const values = Object.values(sentimentCounts);
 
-  const initialProbs = useMemo(() => (topicProbabilities && Object.keys(topicProbabilities).length > 0 ? topicProbabilities : null), [topicProbabilities]);
-  const [intensity, setIntensity] = useState<Record<string, number> | null>(initialProbs);
-  const [coverage, setCoverage] = useState<Record<string, number> | null>(null);
+  const initialIntensity = useMemo(() => (themeIntensity && Object.keys(themeIntensity).length > 0 ? themeIntensity : null), [themeIntensity]);
+  const initialCoverage = useMemo(() => (themeCoverage && Object.keys(themeCoverage).length > 0 ? themeCoverage : null), [themeCoverage]);
+
+  const [intensity, setIntensity] = useState<Record<string, number> | null>(initialIntensity);
+  const [coverage, setCoverage] = useState<Record<string, number> | null>(initialCoverage);
   const [metric, setMetric] = useState<'intensity' | 'coverage'>('intensity');
   const [progress, setProgress] = useState<number>(0);
-  const [isClassifying, setIsClassifying] = useState<boolean>(!initialProbs);
+  const [isClassifying, setIsClassifying] = useState<boolean>(!(initialIntensity && initialCoverage));
   const [coocPairs, setCoocPairs] = useState<Array<{ a: string; b: string; count: number }>>([]);
   const [showReviews, setShowReviews] = useState<boolean>(false);
 
   useEffect(() => {
-    if (initialProbs) return;
+    if (initialIntensity && initialCoverage) {
+      setIsClassifying(false);
+      return;
+    }
     const texts = reviews.map((r) => r.text).filter(Boolean);
-    if (texts.length === 0) return;
+    if (texts.length === 0) {
+      setIsClassifying(false);
+      return;
+    }
 
     const chunkSize = 10;
     const totalCount = texts.length;
     let done = 0;
 
-    const probSums: Record<string, number> = {};
-    const coverCounts: Record<string, number> = {};
+    const themeResults: ThemeResult[] = [];
     const pairCounts: Record<string, number> = {};
 
     const classifyChunk = async (chunk: string[]) => {
@@ -66,23 +74,21 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
       const results: BatchItem[] = data.results || [];
 
       results.forEach(([, r]) => {
-        // Intensity (prob sums)
-        Object.entries(r.all_probabilities || {}).forEach(([k, v]) => {
-          probSums[k] = (probSums[k] || 0) + Number(v);
-        });
-        // Coverage (label presence)
-        const uniqueLabels = Array.from(new Set(r.predicted_labels || []));
-        uniqueLabels.forEach((lab) => (coverCounts[lab] = (coverCounts[lab] || 0) + 1));
-        // Co-occurrence pairs
-        for (let i = 0; i < uniqueLabels.length; i++) {
-          for (let j = i + 1; j < uniqueLabels.length; j++) {
-            const a = uniqueLabels[i];
-            const b = uniqueLabels[j];
+        themeResults.push(r);
+        const uniqueThemes = Array.from(new Set(r.predictedThemes || []));
+        for (let i = 0; i < uniqueThemes.length; i++) {
+          for (let j = i + 1; j < uniqueThemes.length; j++) {
+            const a = uniqueThemes[i];
+            const b = uniqueThemes[j];
             const key = a < b ? `${a}||${b}` : `${b}||${a}`;
             pairCounts[key] = (pairCounts[key] || 0) + 1;
           }
         }
       });
+
+      const aggregates = aggregatePracticeThemes(themeResults);
+      setIntensity(aggregates.intensity);
+      setCoverage(aggregates.coverage);
 
       done += chunk.length;
       setProgress(Math.round((done / totalCount) * 100));
@@ -98,12 +104,7 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
           // continue with next chunk
         }
       }
-      // Finalise metrics
-      const avgIntensity: Record<string, number> = {};
-      Object.entries(probSums).forEach(([k, s]) => (avgIntensity[k] = s / totalCount));
-      const percCoverage: Record<string, number> = {};
-      Object.entries(coverCounts).forEach(([k, c]) => (percCoverage[k] = c / totalCount));
-
+      const aggregates = aggregatePracticeThemes(themeResults);
       const pairs = Object.entries(pairCounts)
         .map(([key, count]) => {
           const [a, b] = key.split('||');
@@ -112,14 +113,14 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
         .sort((x, y) => y.count - x.count)
         .slice(0, 8);
 
-      setIntensity(avgIntensity);
-      setCoverage(percCoverage);
+      setIntensity(aggregates.intensity);
+      setCoverage(aggregates.coverage);
       setCoocPairs(pairs);
       setIsClassifying(false);
     };
 
     run();
-  }, [initialProbs, reviews]);
+  }, [initialCoverage, initialIntensity, reviews]);
 
   const pieData = {
     labels: labels.map((l) => l[0].toUpperCase() + l.slice(1)),
@@ -149,9 +150,12 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
     maintainAspectRatio: false,
   };
 
-  const insights = buildInsights(sentimentCounts as Record<string, number>, labelCounts as Record<string, number>);
+  const insights = buildInsights(sentimentCounts as Record<string, number>, coverage || themeCoverage || {});
 
-  const currentData = metric === 'coverage' ? coverage : intensity;
+  const currentData =
+    metric === 'coverage'
+      ? coverage || themeCoverage || null
+      : intensity || themeIntensity || null;
 
   return (
     <div className="space-y-6">

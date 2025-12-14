@@ -37,11 +37,11 @@ export default function SingleReviewAnalysis({ analysisResults }: { analysisResu
   };
 
   const multilabelData = {
-    labels: Object.keys(multilabelResult.all_probabilities),
+    labels: Object.keys(multilabelResult.themeProbabilities),
     datasets: [
       {
         label: 'Probability',
-        data: Object.values(multilabelResult.all_probabilities),
+        data: Object.values(multilabelResult.themeProbabilities),
         backgroundColor: '#36A2EB',
       },
     ],
