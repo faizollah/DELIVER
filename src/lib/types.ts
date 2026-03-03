@@ -38,4 +38,6 @@ export interface AggregatedResults {
   sentimentCounts: { [key: string]: number };
   themeCoverage: { [key: string]: number };
   themeIntensity: { [key: string]: number };
+  sentimentBatch?: [number, SentimentResult][];
+  multilabelBatch?: [number, MultilabelResult][];
 }

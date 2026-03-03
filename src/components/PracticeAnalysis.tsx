@@ -46,6 +46,12 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
   const [isClassifying, setIsClassifying] = useState<boolean>(!(initialIntensity && initialCoverage));
   const [coocPairs, setCoocPairs] = useState<Array<{ a: string; b: string; count: number }>>([]);
   const [showReviews, setShowReviews] = useState<boolean>(false);
+  const [selectedSentiment, setSelectedSentiment] = useState<string | null>(null);
+  const [perReviewThemes, setPerReviewThemes] = useState<ThemeResult[]>(() => {
+    const batch = analysisResults.multilabelBatch;
+    if (!batch || batch.length === 0) return [];
+    return batch.map(([, r]) => r as ThemeResult);
+  });
 
   useEffect(() => {
     if (initialIntensity && initialCoverage) {
@@ -90,6 +96,7 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
       const aggregates = aggregatePracticeThemes(themeResults);
       setIntensity(aggregates.intensity);
       setCoverage(aggregates.coverage);
+      setPerReviewThemes([...themeResults]);
 
       done += chunk.length;
       setProgress(Math.round((done / totalCount) * 100));
@@ -123,17 +130,43 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
     run();
   }, [initialCoverage, initialIntensity, reviews]);
 
+  const perReviewData = useMemo(() => {
+    const batch = analysisResults.sentimentBatch;
+    if (!batch || perReviewThemes.length === 0) return null;
+    return batch.map(([idx, sent]) => ({
+      index: idx,
+      sentiment: sent.sentiment,
+      themeResult: perReviewThemes[idx] || { predictedThemes: [] as string[], themeProbabilities: {} as Record<string, number> },
+    }));
+  }, [analysisResults.sentimentBatch, perReviewThemes]);
+
+  const filteredAggregates = useMemo(() => {
+    if (!selectedSentiment || !perReviewData) return null;
+    const filtered = perReviewData.filter((r) => r.sentiment === selectedSentiment);
+    if (filtered.length === 0) return null;
+    return aggregatePracticeThemes(filtered.map((r) => r.themeResult));
+  }, [selectedSentiment, perReviewData]);
+
+  const filteredCount = useMemo(() => {
+    if (!selectedSentiment || !perReviewData) return 0;
+    return perReviewData.filter((r) => r.sentiment === selectedSentiment).length;
+  }, [selectedSentiment, perReviewData]);
+
+  const selectedIndex = selectedSentiment ? labels.indexOf(selectedSentiment) : -1;
   const pieData = {
     labels: labels.map((l) => l[0].toUpperCase() + l.slice(1)),
     datasets: [
       {
         data: values,
         backgroundColor: ['#34d399', '#f87171', '#60a5fa', '#fbbf24'],
-        borderWidth: 0,
+        borderWidth: labels.map((_, i) => (selectedIndex === i ? 3 : 0)),
+        borderColor: labels.map((_, i) => (selectedIndex === i ? '#0f172a' : 'transparent')),
+        offset: labels.map((_, i) => (selectedIndex === i ? 12 : 0)),
       },
     ],
   };
 
+  const canFilter = Boolean(perReviewData);
   const pieOptions = {
     plugins: {
       legend: { display: true, position: 'bottom' as const },
@@ -142,28 +175,51 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
           label: (ctx: { parsed: number; label: string }) => {
             const v = ctx.parsed;
             const pct = total ? ((v / total) * 100).toFixed(1) : '0.0';
-            return `${ctx.label}: ${pct}%`;
+            return `${ctx.label}: ${pct}%${canFilter ? ' (click to filter)' : ''}`;
           },
         },
       },
     },
     responsive: true,
     maintainAspectRatio: false,
+    onClick: canFilter
+      ? (_evt: unknown, activeElements: { index: number }[]) => {
+          if (activeElements.length > 0) {
+            const idx = activeElements[0].index;
+            const sentiment = labels[idx];
+            setSelectedSentiment((prev) => (prev === sentiment ? null : sentiment));
+          }
+        }
+      : undefined,
+    onHover: canFilter
+      ? (event: { native: Event | null }, elements: unknown[]) => {
+          const target = event.native?.target as HTMLElement | undefined;
+          if (target) target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+        }
+      : undefined,
   };
 
   const insights = buildInsights(sentimentCounts as Record<string, number>, coverage || themeCoverage || {});
 
-  const currentData = metric === 'coverage' ? coverage : intensity;
+  const currentData = filteredAggregates
+    ? (metric === 'coverage' ? filteredAggregates.coverage : filteredAggregates.intensity)
+    : (metric === 'coverage' ? coverage : intensity);
 
   return (
     <div className="space-y-6">
       <p className="rounded-xl border border-slate-200/70 bg-white/80 p-4 text-slate-800">{insights}</p>
       <div className="grid gap-6 md:grid-cols-2">
         <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm" style={{ height: 550 }}>
-          <h4 className="mb-3 text-sm font-semibold text-slate-700">Overall Sentiment Distribution</h4>
+          <h4 className="mb-3 text-sm font-semibold text-slate-700">Overall Sentiment Distribution{canFilter ? <span className="ml-2 text-xs font-normal text-slate-500">(click a slice to filter topics)</span> : ''}</h4>
           <Pie data={pieData} options={pieOptions} />
         </div>
         <div className={`rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm ${isClassifying ? 'animate-pulse' : ''}`} style={{ height: 550 }}>
+          {selectedSentiment && (
+            <div className="mb-2 flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-xs text-slate-700">
+              <span>Filtered: <span className="font-semibold">{selectedSentiment[0].toUpperCase() + selectedSentiment.slice(1)}</span> ({filteredCount} review{filteredCount !== 1 ? 's' : ''})</span>
+              <button onClick={() => setSelectedSentiment(null)} className="ml-1 rounded-full bg-slate-300 px-1.5 text-xs text-slate-600 hover:bg-slate-400 hover:text-white" aria-label="Clear filter">&times;</button>
+            </div>
+          )}
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h4 className="text-sm font-semibold text-slate-700">{metric === 'coverage' ? 'Topic coverage (% of reviews)' : 'Topic intensity (average confidence across reviews)'}</h4>
             <div className="flex items-center gap-2">

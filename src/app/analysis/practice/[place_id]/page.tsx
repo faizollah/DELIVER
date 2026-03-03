@@ -30,13 +30,16 @@ export default async function PracticeAnalysisPage({ params }: PracticeAnalysisP
 
   if (reviews.length > 0) {
     try {
-      const { sentimentBatchResults, themeAggregates } = await analyzePracticeReviews(reviews);
+      const { sentimentBatchResults, multilabelBatchResults, themeAggregates } = await analyzePracticeReviews(reviews);
       aggregatedResults.sentimentCounts = aggregateSentiment(sentimentBatchResults);
       aggregatedResults.themeCoverage = themeAggregates.coverage;
       aggregatedResults.themeIntensity = themeAggregates.intensity;
+      aggregatedResults.sentimentBatch = sentimentBatchResults;
+      aggregatedResults.multilabelBatch = multilabelBatchResults;
     } catch {
       const sentimentBatch = await analyzeSentimentBatch(reviews);
       aggregatedResults.sentimentCounts = aggregateSentiment(sentimentBatch);
+      aggregatedResults.sentimentBatch = sentimentBatch;
     }
   }
 
