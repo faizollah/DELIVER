@@ -20,6 +20,58 @@ export interface PracticeAnalysisProps {
 
 type BatchItem = [number, MultilabelResult];
 
+const STOP_WORDS = new Set([
+  'the','a','an','and','or','but','in','on','at','to','for','of','with','by','from',
+  'is','was','were','are','be','been','being','have','has','had','do','does','did',
+  'will','would','could','should','may','might','shall','can','this','that','these',
+  'those','it','its','i','my','me','we','our','you','your','they','their','he','she',
+  'his','her','us','him','them','not','no','so','very','just','also','really','quite',
+  'even','much','more','most','some','any','all','both','each','every','few','other',
+  'such','same','own','too','then','than','how','what','when','where','which','who',
+  'why','if','as','up','out','get','got','go','went','there','here','about','after',
+  'before','while','through','over','back','still','again','always','never','now',
+  'well','only','many','one','two','first','time','day','year','am','into','since',
+  'though','although','however','already','having','need','want',
+]);
+
+function extractTopBigrams(texts: string[], topN = 15): { phrase: string; count: number }[] {
+  const bigramCounts: Record<string, number> = {};
+  const unigramCounts: Record<string, number> = {};
+
+  for (const text of texts) {
+    const tokens = text
+      .toLowerCase()
+      .replace(/[^a-z\s'-]/g, ' ')
+      .split(/\s+/)
+      .filter((t) => t.length > 2 && !STOP_WORDS.has(t));
+
+    for (const token of tokens) {
+      unigramCounts[token] = (unigramCounts[token] || 0) + 1;
+    }
+    for (let i = 0; i < tokens.length - 1; i++) {
+      const bigram = `${tokens[i]} ${tokens[i + 1]}`;
+      bigramCounts[bigram] = (bigramCounts[bigram] || 0) + 1;
+    }
+  }
+
+  const bigrams = Object.entries(bigramCounts)
+    .filter(([, c]) => c >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([phrase, count]) => ({ phrase, count }));
+
+  if (bigrams.length >= 5) return bigrams;
+
+  const usedPhrases = new Set(bigrams.map((b) => b.phrase));
+  const unigrams = Object.entries(unigramCounts)
+    .filter(([phrase, c]) => c >= 2 && !usedPhrases.has(phrase))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN - bigrams.length)
+    .map(([phrase, count]) => ({ phrase, count }));
+
+  return [...bigrams, ...unigrams].slice(0, topN);
+}
+
 function buildInsights(sentimentCounts: Record<string, number>, coverage: Record<string, number>): string {
   const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0) || 1;
   const topSent = Object.entries(sentimentCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'unknown';
@@ -163,6 +215,17 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
     return buckets.length > 0 ? buckets : null;
   }, [perReviewData, reviews]);
 
+  const topBigrams = useMemo(() => {
+    if (!selectedSentiment || !perReviewData) return null;
+    const texts = perReviewData
+      .filter((r) => r.sentiment === selectedSentiment)
+      .map((r) => reviews[r.index]?.text)
+      .filter(Boolean) as string[];
+    if (texts.length === 0) return null;
+    const result = extractTopBigrams(texts);
+    return result.length > 0 ? result : null;
+  }, [selectedSentiment, perReviewData, reviews]);
+
   const selectedIndex = selectedSentiment ? labels.indexOf(selectedSentiment) : -1;
   const pieData = {
     labels: labels.map((l) => l[0].toUpperCase() + l.slice(1)),
@@ -253,6 +316,23 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
           </p>
         </div>
       </div>
+
+      {selectedSentiment && topBigrams && (
+        <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
+          <h4 className="mb-3 text-sm font-semibold text-slate-700">
+            Top keywords in <span className="capitalize">{selectedSentiment}</span> reviews
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {topBigrams.map(({ phrase, count }) => (
+              <span key={phrase} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+                {phrase}
+                <span className="rounded-full bg-slate-300 px-1.5 py-0.5 text-xs font-medium text-slate-600">{count}</span>
+              </span>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-slate-500">Most frequent word pairs from {filteredCount} {selectedSentiment} review{filteredCount !== 1 ? 's' : ''}. Numbers show how many reviews contain each phrase.</p>
+        </div>
+      )}
 
       {sentimentThemeBreakdown && (
         <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm" style={{ height: 500 }}>
