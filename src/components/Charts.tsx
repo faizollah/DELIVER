@@ -14,6 +14,7 @@ import {
 } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import React from 'react';
+import type { SentimentThemeBreakdown, MonthlyBucket } from '@/lib/themes';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -105,6 +106,107 @@ export function TopicsBar({ probs, topN }: { probs: Record<string, number>; topN
         color: '#0f172a',
         font: { weight: 600 },
       },
+    },
+    responsive: true,
+    maintainAspectRatio: false,
+  };
+
+  return (
+    <div className="h-full">
+      <Bar data={data} options={options} />
+    </div>
+  );
+}
+
+const SENTIMENT_COLORS: Record<string, string> = {
+  positive: '#34d399',
+  negative: '#f87171',
+  mixed: '#60a5fa',
+  neutral: '#fbbf24',
+};
+const SENTIMENT_ORDER = ['positive', 'negative', 'mixed', 'neutral'];
+
+export function SentimentPerThemeBar({ breakdown }: { breakdown: SentimentThemeBreakdown }) {
+  const themes = Object.keys(breakdown)
+    .map((theme) => ({
+      theme,
+      total: Object.values(breakdown[theme]).reduce((a, b) => a + b, 0),
+    }))
+    .sort((a, b) => b.total - a.total)
+    .map((t) => t.theme);
+
+  const datasets = SENTIMENT_ORDER.map((sentiment) => ({
+    label: sentiment.charAt(0).toUpperCase() + sentiment.slice(1),
+    data: themes.map((theme) => breakdown[theme]?.[sentiment] || 0),
+    backgroundColor: SENTIMENT_COLORS[sentiment],
+    borderRadius: 4,
+    borderWidth: 0,
+  }));
+
+  const data = { labels: themes, datasets };
+
+  const options: ChartOptions<'bar'> = {
+    animation,
+    indexAxis: 'y',
+    scales: {
+      x: {
+        stacked: true,
+        grid: { color: 'rgba(226,232,240,0.6)' },
+        title: { display: true, text: 'Number of reviews' },
+        ticks: { stepSize: 1, precision: 0 },
+      },
+      y: {
+        stacked: true,
+        grid: { display: false },
+        ticks: { autoSkip: false },
+      },
+    },
+    plugins: {
+      legend: { display: true, position: 'top' as const },
+      tooltip: { mode: 'index' as const, intersect: false },
+    },
+    responsive: true,
+    maintainAspectRatio: false,
+  };
+
+  return (
+    <div className="h-full">
+      <Bar data={data} options={options} />
+    </div>
+  );
+}
+
+export function SentimentTrendChart({ buckets }: { buckets: MonthlyBucket[] }) {
+  const labels = buckets.map((b) => b.label);
+
+  const datasets = SENTIMENT_ORDER.map((sentiment) => ({
+    label: sentiment.charAt(0).toUpperCase() + sentiment.slice(1),
+    data: buckets.map((b) => b.sentimentCounts[sentiment] || 0),
+    backgroundColor: SENTIMENT_COLORS[sentiment],
+    borderRadius: 4,
+    borderWidth: 0,
+  }));
+
+  const data = { labels, datasets };
+
+  const options: ChartOptions<'bar'> = {
+    animation,
+    scales: {
+      x: {
+        stacked: true,
+        grid: { display: false },
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        grid: { color: 'rgba(226,232,240,0.6)' },
+        title: { display: true, text: 'Number of reviews' },
+        ticks: { stepSize: 1, precision: 0 },
+      },
+    },
+    plugins: {
+      legend: { display: true, position: 'top' as const },
+      tooltip: { mode: 'index' as const, intersect: false },
     },
     responsive: true,
     maintainAspectRatio: false,

@@ -98,6 +98,10 @@ interface ApifyReviewItem {
   reviewText?: string;
   text?: string;
   review?: string;
+  stars?: number;
+  rating?: number;
+  publishedAtDate?: string;
+  reviewDate?: string;
 }
 
 // Fetch Google Maps reviews via Apify (more than 5)
@@ -126,7 +130,11 @@ export async function getPracticeReviews(place_id: string): Promise<Review[]> {
 
   // Map results to Review[]
   const reviews: Review[] = (items as ApifyReviewItem[] | undefined || [])
-    .map((it) => ({ text: (it.reviewText || it.text || it.review || '').toString() }))
+    .map((it) => ({
+      text: (it.reviewText || it.text || it.review || '').toString(),
+      date: it.publishedAtDate || it.reviewDate || undefined,
+      stars: it.stars ?? it.rating ?? undefined,
+    }))
     .filter((r) => r.text && r.text.trim().length > 0);
 
   return reviews;

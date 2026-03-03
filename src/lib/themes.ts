@@ -65,6 +65,64 @@ export function processClassifierResponse(result: {
   return { predictedThemes, themeProbabilities, threshold: result.threshold };
 }
 
+// --- Sentiment breakdown per theme ---
+
+export type SentimentThemeBreakdown = Record<string, Record<string, number>>;
+
+export function aggregateSentimentPerTheme(
+  perReviewData: Array<{ sentiment: string; themeResult: ThemeResult }>,
+): SentimentThemeBreakdown {
+  const breakdown: SentimentThemeBreakdown = {};
+  THEMES.forEach((theme) => {
+    breakdown[theme] = {};
+  });
+
+  perReviewData.forEach(({ sentiment, themeResult }) => {
+    themeResult.predictedThemes.forEach((theme) => {
+      if (!breakdown[theme]) breakdown[theme] = {};
+      breakdown[theme][sentiment] = (breakdown[theme][sentiment] || 0) + 1;
+    });
+  });
+
+  return breakdown;
+}
+
+// --- Monthly sentiment buckets ---
+
+export interface MonthlyBucket {
+  month: string;
+  label: string;
+  sentimentCounts: Record<string, number>;
+}
+
+export function bucketReviewsByMonth(
+  perReviewData: Array<{ index: number; sentiment: string }>,
+  reviews: { date?: string }[],
+): MonthlyBucket[] {
+  const buckets: Record<string, Record<string, number>> = {};
+
+  perReviewData.forEach(({ index, sentiment }) => {
+    const review = reviews[index];
+    if (!review?.date) return;
+    const d = new Date(review.date);
+    if (isNaN(d.getTime())) return;
+    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (!buckets[monthKey]) buckets[monthKey] = {};
+    buckets[monthKey][sentiment] = (buckets[monthKey][sentiment] || 0) + 1;
+  });
+
+  return Object.entries(buckets)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, sentimentCounts]) => {
+      const [y, m] = month.split('-');
+      const label = new Date(Number(y), Number(m) - 1).toLocaleDateString('en-GB', {
+        month: 'short',
+        year: 'numeric',
+      });
+      return { month, label, sentimentCounts };
+    });
+}
+
 export function aggregatePracticeThemes(results: ThemeResult[]): ThemeAggregates {
   const coverageCounts = createEmptyThemeMap();
   const probabilitySums = createEmptyThemeMap();

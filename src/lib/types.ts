@@ -9,6 +9,8 @@ export interface Practice {
 
 export interface Review {
   text: string;
+  date?: string;
+  stars?: number;
 }
 
 export interface PracticeDetails extends Practice {

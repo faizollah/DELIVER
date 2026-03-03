@@ -7,9 +7,9 @@ import {
   Legend,
 } from 'chart.js';
 import { AggregatedResults, Review, MultilabelResult } from '@/lib/types';
-import { TopicsBar } from './Charts';
+import { TopicsBar, SentimentPerThemeBar, SentimentTrendChart } from './Charts';
 import { useEffect, useMemo, useState } from 'react';
-import { aggregatePracticeThemes, ThemeResult } from '@/lib/themes';
+import { aggregatePracticeThemes, aggregateSentimentPerTheme, bucketReviewsByMonth, ThemeResult } from '@/lib/themes';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -152,6 +152,17 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
     return perReviewData.filter((r) => r.sentiment === selectedSentiment).length;
   }, [selectedSentiment, perReviewData]);
 
+  const sentimentThemeBreakdown = useMemo(() => {
+    if (!perReviewData) return null;
+    return aggregateSentimentPerTheme(perReviewData);
+  }, [perReviewData]);
+
+  const monthlyBuckets = useMemo(() => {
+    if (!perReviewData) return null;
+    const buckets = bucketReviewsByMonth(perReviewData, reviews);
+    return buckets.length > 0 ? buckets : null;
+  }, [perReviewData, reviews]);
+
   const selectedIndex = selectedSentiment ? labels.indexOf(selectedSentiment) : -1;
   const pieData = {
     labels: labels.map((l) => l[0].toUpperCase() + l.slice(1)),
@@ -242,6 +253,26 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
           </p>
         </div>
       </div>
+
+      {sentimentThemeBreakdown && (
+        <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm" style={{ height: 500 }}>
+          <h4 className="mb-3 text-sm font-semibold text-slate-700">Sentiment breakdown per theme</h4>
+          <div className="h-[420px]">
+            <SentimentPerThemeBar breakdown={sentimentThemeBreakdown} />
+          </div>
+          <p className="mt-2 text-xs text-slate-600">Shows how many reviews mentioning each theme are positive, negative, mixed, or neutral.</p>
+        </div>
+      )}
+
+      {monthlyBuckets && (
+        <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm" style={{ height: 400 }}>
+          <h4 className="mb-3 text-sm font-semibold text-slate-700">Sentiment trend over time</h4>
+          <div className="h-[320px]">
+            <SentimentTrendChart buckets={monthlyBuckets} />
+          </div>
+          <p className="mt-2 text-xs text-slate-600">Monthly distribution of review sentiment. Only reviews with dates are included.</p>
+        </div>
+      )}
 
       <div className="rounded-xl border border-slate-200/70 bg-white/80 p-4 shadow-sm">
         <h4 className="mb-2 text-sm font-semibold text-slate-700">Interpreting intensity (confidence)</h4>
