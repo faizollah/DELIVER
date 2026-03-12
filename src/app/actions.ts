@@ -125,7 +125,7 @@ export async function getPracticeReviews(place_id: string): Promise<Review[]> {
     if (cached) {
       const ageMs = Date.now() - cached.cachedAt.getTime();
       if (ageMs < CACHE_TTL_MS) {
-        return cached.reviews as Review[];
+        return cached.reviews as unknown as Review[];
       }
     }
   } catch {
