@@ -136,11 +136,13 @@ export async function getPracticeReviews(place_id: string): Promise<Review[]> {
   const apiKey = process.env.OUTSCRAPER_API_KEY || '';
   if (!apiKey) throw new Error('OUTSCRAPER_API_KEY is not set');
 
+  const t0 = Date.now();
   const response = await http.get(OUTSCRAPER_REVIEWS_URL, {
     params: { query: place_id, limit: 100, async: false },
     headers: { 'X-API-KEY': apiKey },
     timeout: 120000,
   });
+  console.log(`[timing] Outscraper: ${Date.now() - t0}ms`);
 
   const rawReviews = response.data?.data?.[0]?.reviews_data as OutscraperReview[] | undefined;
   const reviews: Review[] = (rawReviews || [])
@@ -257,11 +259,16 @@ export async function analyzePracticeReviews(reviews: Review[]): Promise<{
   themeAggregates: ReturnType<typeof aggregatePracticeThemes>;
 }> {
   const texts = reviews.map((r) => r.text);
-  const sentiment = await callSentiment(texts);
 
+  const t1 = Date.now();
+  const sentiment = await callSentiment(texts);
+  console.log(`[timing] Sentiment: ${Date.now() - t1}ms`);
+
+  const t2 = Date.now();
   let topics: TopicsAPIResult[];
   try {
     topics = await callTopics(texts);
+    console.log(`[timing] Topics: ${Date.now() - t2}ms`);
   } catch {
     console.warn('Classification service unavailable for practice batch; continuing without labels.');
     topics = texts.map(() => ({ predicted_labels: [], all_probabilities: {} }));
