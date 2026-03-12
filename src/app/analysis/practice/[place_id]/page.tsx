@@ -52,7 +52,6 @@ export default async function PracticeAnalysisPage({ params }: PracticeAnalysisP
         <main className="max-w-7xl mx-auto bg-white p-8 rounded-lg shadow-md">
           <h2 className="text-3xl font-bold text-center mb-2">{details.name}</h2>
           <p className="text-center text-slate-600">{details.formatted_address}</p>
-          <p className="text-center text-slate-500 mb-6">{reviews.length} reviews analysed</p>
           {reviews.length > 0 ? (
             <AnalysisComp analysisResults={aggregatedResults} reviews={reviews} />
           ) : (

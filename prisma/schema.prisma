@@ -20,3 +20,9 @@ model SentimentLog {
   confidence Float
   createdAt  DateTime @default(now())
 }
+
+model ReviewCache {
+  placeId  String   @id
+  reviews  Json
+  cachedAt DateTime @default(now())
+}

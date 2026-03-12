@@ -14,14 +14,27 @@ import {
   MultilabelBatchResult,
 } from '@/lib/types';
 
-const http = axios.create({ timeout: 10000 });
+// const http = axios.create({ timeout: 10000 });
+const http = axios.create({ timeout: 30000 });
 
-const SENTIMENT_URL = 'http://173.249.57.169:8081/predict';
+// const SENTIMENT_URL = 'http://173.249.57.169:8081/predict';
+const SENTIMENT_URL = 'https://ohgoojezganoqm-8080.proxy.runpod.net/predict';
 const TOPICS_URL = 'http://173.249.57.169:8082/predict';
 
 const OUTSCRAPER_REVIEWS_URL = 'https://api.app.outscraper.com/maps/reviews-v3';
-type OutscraperReview = { review_text?: string; snippet?: string; text?: string };
-type OutscraperResponseItem = { reviews_data?: OutscraperReview[] };
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// type OutscraperReview = { review_text?: string; snippet?: string; text?: string };
+// type OutscraperResponseItem = { reviews_data?: OutscraperReview[] };
+interface OutscraperReview {
+  review_text?: string;
+  text?: string;
+  review?: string;
+  rating?: number;
+  stars?: number;
+  review_datetime_utc?: string;
+  publishedAtDate?: string;
+}
 
 // Apify Client (dynamic import to keep edge/server bundles slim)
 // async function getApifyClient() {
@@ -104,23 +117,52 @@ export async function getPracticeDetails(place_id: string): Promise<PracticeDeta
 //   reviewDate?: string;
 // }
 
-// Fetch Google Maps reviews via Outscraper
+// Fetch Google Maps reviews via Outscraper, with DB caching
 export async function getPracticeReviews(place_id: string): Promise<Review[]> {
+  // 1. Check DB cache first
+  try {
+    const cached = await prisma.reviewCache.findUnique({ where: { placeId: place_id } });
+    if (cached) {
+      const ageMs = Date.now() - cached.cachedAt.getTime();
+      if (ageMs < CACHE_TTL_MS) {
+        return cached.reviews as Review[];
+      }
+    }
+  } catch {
+    // DB unavailable — proceed to scrape
+  }
+
+  // 2. Fetch from Outscraper
   const apiKey = process.env.OUTSCRAPER_API_KEY || '';
   if (!apiKey) throw new Error('OUTSCRAPER_API_KEY is not set');
 
   const response = await http.get(OUTSCRAPER_REVIEWS_URL, {
     params: { query: place_id, limit: 100, async: false },
     headers: { 'X-API-KEY': apiKey },
-    timeout: 60000,
+    timeout: 120000,
   });
 
-  const data: OutscraperResponseItem[] = response.data?.data ?? [];
-  const rawReviews: OutscraperReview[] = data.flatMap((item) => item.reviews_data ?? []);
+  const rawReviews = response.data?.data?.[0]?.reviews_data as OutscraperReview[] | undefined;
+  const reviews: Review[] = (rawReviews || [])
+    .map((it) => ({
+      text: (it.review_text || it.text || it.review || '').toString(),
+      date: it.review_datetime_utc || it.publishedAtDate || undefined,
+      stars: it.rating ?? it.stars ?? undefined,
+    }))
+    .filter((r) => r.text && r.text.trim().length > 0);
 
-  return rawReviews
-    .map((r) => ({ text: (r.review_text || r.snippet || r.text || '').toString() }))
-    .filter((r) => r.text.trim().length > 0);
+  // 3. Store in DB cache (non-fatal if it fails)
+  try {
+    await prisma.reviewCache.upsert({
+      where: { placeId: place_id },
+      update: { reviews: reviews as object[], cachedAt: new Date() },
+      create: { placeId: place_id, reviews: reviews as object[] },
+    });
+  } catch {
+    // Continue without caching
+  }
+
+  return reviews;
 }
 
 // Apify implementation (commented out — replaced by Outscraper)
