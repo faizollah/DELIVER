@@ -19,15 +19,15 @@ const http = axios.create({ timeout: 10000 });
 const SENTIMENT_URL = 'http://173.249.57.169:8081/predict';
 const TOPICS_URL = 'http://173.249.57.169:8082/predict';
 
-// Outscraper (unused now) kept for reference
-// const OUTSCRAPER_REVIEWS_URL = 'https://api.app.outscraper.com/maps/reviews-v3';
-// type OutscraperReview = { review_text?: string; text?: string; review?: string };
+const OUTSCRAPER_REVIEWS_URL = 'https://api.app.outscraper.com/maps/reviews-v3';
+type OutscraperReview = { review_text?: string; snippet?: string; text?: string };
+type OutscraperResponseItem = { reviews_data?: OutscraperReview[] };
 
 // Apify Client (dynamic import to keep edge/server bundles slim)
-async function getApifyClient() {
-  const { ApifyClient } = await import('apify-client');
-  return new ApifyClient({ token: process.env.APIFY_TOKEN || '' });
-}
+// async function getApifyClient() {
+//   const { ApifyClient } = await import('apify-client');
+//   return new ApifyClient({ token: process.env.APIFY_TOKEN || '' });
+// }
 
 type GooglePlace = {
   place_id: string;
@@ -93,52 +93,62 @@ export async function getPracticeDetails(place_id: string): Promise<PracticeDeta
   return details;
 }
 
-// Apify dataset item minimal shape
-interface ApifyReviewItem {
-  reviewText?: string;
-  text?: string;
-  review?: string;
-  stars?: number;
-  rating?: number;
-  publishedAtDate?: string;
-  reviewDate?: string;
-}
+// Apify dataset item minimal shape (kept for commented-out Apify implementation)
+// interface ApifyReviewItem {
+//   reviewText?: string;
+//   text?: string;
+//   review?: string;
+//   stars?: number;
+//   rating?: number;
+//   publishedAtDate?: string;
+//   reviewDate?: string;
+// }
 
-// Fetch Google Maps reviews via Apify (more than 5)
+// Fetch Google Maps reviews via Outscraper
 export async function getPracticeReviews(place_id: string): Promise<Review[]> {
-  // Apify implementation: requires Google Maps place URL
-  const details = (await getPracticeDetails(place_id)) as PracticeDetailsWithUrl;
-  const mapsUrl = details.maps_url;
-  if (!mapsUrl) throw new Error('Google Maps URL not available for this place');
+  const apiKey = process.env.OUTSCRAPER_API_KEY || '';
+  if (!apiKey) throw new Error('OUTSCRAPER_API_KEY is not set');
 
-  const token = process.env.APIFY_TOKEN || '';
-  if (!token) throw new Error('APIFY_TOKEN is not set');
+  const response = await http.get(OUTSCRAPER_REVIEWS_URL, {
+    params: { query: place_id, limit: 100, async: false },
+    headers: { 'X-API-KEY': apiKey },
+    timeout: 60000,
+  });
 
-  const client = await getApifyClient();
+  const data: OutscraperResponseItem[] = response.data?.data ?? [];
+  const rawReviews: OutscraperReview[] = data.flatMap((item) => item.reviews_data ?? []);
 
-  const input = {
-    startUrls: [{ url: mapsUrl }],
-    maxReviews: 100,
-    reviewsSort: 'newest',
-    language: 'en',
-    reviewsOrigin: 'all',
-    personalData: true,
-  } as Record<string, unknown>;
-
-  const run = await client.actor('Xb8osYTtOjlsgI6k9').call(input);
-  const { items } = await client.dataset(run.defaultDatasetId).listItems();
-
-  // Map results to Review[]
-  const reviews: Review[] = (items as ApifyReviewItem[] | undefined || [])
-    .map((it) => ({
-      text: (it.reviewText || it.text || it.review || '').toString(),
-      date: it.publishedAtDate || it.reviewDate || undefined,
-      stars: it.stars ?? it.rating ?? undefined,
-    }))
-    .filter((r) => r.text && r.text.trim().length > 0);
-
-  return reviews;
+  return rawReviews
+    .map((r) => ({ text: (r.review_text || r.snippet || r.text || '').toString() }))
+    .filter((r) => r.text.trim().length > 0);
 }
+
+// Apify implementation (commented out — replaced by Outscraper)
+// export async function getPracticeReviewsApify(place_id: string): Promise<Review[]> {
+//   const details = (await getPracticeDetails(place_id)) as PracticeDetailsWithUrl;
+//   const mapsUrl = details.maps_url;
+//   if (!mapsUrl) throw new Error('Google Maps URL not available for this place');
+//   const token = process.env.APIFY_TOKEN || '';
+//   if (!token) throw new Error('APIFY_TOKEN is not set');
+//   const client = await getApifyClient();
+//   const input = {
+//     startUrls: [{ url: mapsUrl }],
+//     maxReviews: 100,
+//     reviewsSort: 'newest',
+//     language: 'en',
+//     reviewsOrigin: 'all',
+//     personalData: true,
+//   } as Record<string, unknown>;
+//   const run = await client.actor('Xb8osYTtOjlsgI6k9').call(input);
+//   const { items } = await client.dataset(run.defaultDatasetId).listItems();
+//   return (items as ApifyReviewItem[] | undefined || [])
+//     .map((it) => ({
+//       text: (it.reviewText || it.text || it.review || '').toString(),
+//       date: it.publishedAtDate || it.reviewDate || undefined,
+//       stars: it.stars ?? it.rating ?? undefined,
+//     }))
+//     .filter((r) => r.text && r.text.trim().length > 0);
+// }
 
 export async function analyzeSingleReview(text: string): Promise<AnalysisResults> {
   const sentiment = await callSentiment([text]);
