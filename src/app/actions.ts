@@ -264,20 +264,20 @@ export async function analyzePracticeReviews(reviews: Review[]): Promise<{
   const sentiment = await callSentiment(texts);
   console.log(`[timing] Sentiment: ${Date.now() - t1}ms`);
 
-  const t2 = Date.now();
-  let topics: TopicsAPIResult[];
-  try {
-    topics = await callTopics(texts);
-    console.log(`[timing] Topics: ${Date.now() - t2}ms`);
-  } catch {
-    console.warn('Classification service unavailable for practice batch; continuing without labels.');
-    topics = texts.map(() => ({ predicted_labels: [], all_probabilities: {} }));
-  }
+  // Topics skipped server-side — client handles chunk classification after page loads
+  // const t2 = Date.now();
+  // let topics: TopicsAPIResult[];
+  // try {
+  //   topics = await callTopics(texts);
+  //   console.log(`[timing] Topics: ${Date.now() - t2}ms`);
+  // } catch {
+  //   console.warn('Classification service unavailable for practice batch; continuing without labels.');
+  //   topics = texts.map(() => ({ predicted_labels: [], all_probabilities: {} }));
+  // }
 
   const sentimentBatchResults: SentimentBatchResult = sentiment.map((s, i) => [i, { sentiment: s.label, confidence: s.confidence }]);
-  const themeResults: ThemeResult[] = topics.map((t) => processClassifierResponse(t));
-  const multilabelBatchResults: MultilabelBatchResult = themeResults.map((t, i) => [i, t]);
-  const themeAggregates = aggregatePracticeThemes(themeResults);
+  const multilabelBatchResults: MultilabelBatchResult = [];
+  const themeAggregates = aggregatePracticeThemes([]);
 
   return { sentimentBatchResults, multilabelBatchResults, themeAggregates };
 }
