@@ -232,7 +232,7 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
     datasets: [
       {
         data: values,
-        backgroundColor: ['#34d399', '#f87171', '#60a5fa', '#fbbf24'],
+        backgroundColor: labels.map((l) => ({ positive: '#4CAF50', negative: '#F44336', neutral: '#2196F3', mixed: '#FFC107' }[l] ?? '#94a3b8')),
         borderWidth: labels.map((_, i) => (selectedIndex === i ? 3 : 0)),
         borderColor: labels.map((_, i) => (selectedIndex === i ? '#0f172a' : 'transparent')),
         offset: labels.map((_, i) => (selectedIndex === i ? 12 : 0)),
