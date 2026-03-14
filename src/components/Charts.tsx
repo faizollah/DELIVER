@@ -119,10 +119,10 @@ export function TopicsBar({ probs, topN }: { probs: Record<string, number>; topN
 }
 
 const SENTIMENT_COLORS: Record<string, string> = {
-  positive: '#4CAF50',
-  negative: '#F44336',
-  neutral: '#2196F3',
-  mixed: '#FFC107',
+  positive: '#009E73',
+  negative: '#D55E00',
+  neutral: '#0072B2',
+  mixed: '#E69F00',
 };
 const SENTIMENT_ORDER = ['positive', 'negative', 'mixed', 'neutral'];
 
