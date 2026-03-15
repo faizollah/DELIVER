@@ -2,6 +2,7 @@
 
 import axios from 'axios';
 import prisma from '@/lib/prisma';
+import { fetchReviewsSerpApi } from '@/lib/reviewProviders';
 import { processClassifierResponse, aggregatePracticeThemes, createEmptyThemeMap, ThemeResult } from '@/lib/themes';
 import {
   Practice,
@@ -118,8 +119,17 @@ export async function getPracticeDetails(place_id: string): Promise<PracticeDeta
 //   reviewDate?: string;
 // }
 
-// Fetch Google Maps reviews via Outscraper, with DB caching
+// Fetch Google Maps reviews via SerpApi (primary), Outscraper as backup
 export async function getPracticeReviews(place_id: string): Promise<Review[]> {
+  // 1. Try SerpApi first
+  const t0 = Date.now();
+  const reviews = await fetchReviewsSerpApi(place_id, 100);
+  console.log(`[timing] SerpApi: ${Date.now() - t0}ms (${reviews.length} reviews)`);
+  return reviews;
+}
+
+// Outscraper backup (swap in if SerpApi is unavailable)
+async function getPracticeReviewsOutscraper(place_id: string): Promise<Review[]> {
   // 1. Check DB cache first
   try {
     const cached = await prisma.reviewCache.findUnique({ where: { placeId: place_id } });
