@@ -122,10 +122,18 @@ export async function getPracticeDetails(place_id: string): Promise<PracticeDeta
 // Fetch Google Maps reviews via SerpApi (primary), Outscraper as backup
 export async function getPracticeReviews(place_id: string): Promise<Review[]> {
   // 1. Try SerpApi first
-  const t0 = Date.now();
-  const reviews = await fetchReviewsSerpApi(place_id, 100);
-  console.log(`[timing] SerpApi: ${Date.now() - t0}ms (${reviews.length} reviews)`);
-  return reviews;
+  try {
+    const t0 = Date.now();
+    const reviews = await fetchReviewsSerpApi(place_id, 100);
+    console.log(`[timing] SerpApi: ${Date.now() - t0}ms (${reviews.length} reviews)`);
+    if (reviews.length > 0) return reviews;
+    console.warn('[serpapi] returned 0 reviews — falling back to Outscraper');
+  } catch (err) {
+    console.warn(`[serpapi] failed: ${err} — falling back to Outscraper`);
+  }
+
+  // 2. Fall back to Outscraper
+  return getPracticeReviewsOutscraper(place_id);
 }
 
 // Outscraper backup (swap in if SerpApi is unavailable)

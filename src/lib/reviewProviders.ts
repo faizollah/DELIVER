@@ -41,6 +41,10 @@ export async function fetchReviewsSerpApi(placeId: string, targetCount = 100): P
     if (json.error) throw new Error(`SerpApi error: ${json.error}`);
 
     const page = json.reviews ?? [];
+    if (allReviews.length === 0) {
+      // Log first page to diagnose field structure
+      console.log(`[serpapi] first page: ${page.length} reviews, keys=${page[0] ? Object.keys(page[0]).join(',') : 'none'}`);
+    }
     if (page.length === 0) break;
 
     for (const r of page) {
