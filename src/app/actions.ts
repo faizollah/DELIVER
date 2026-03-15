@@ -39,10 +39,10 @@ interface OutscraperReview {
 }
 
 // Apify Client (dynamic import to keep edge/server bundles slim)
-// async function getApifyClient() {
-//   const { ApifyClient } = await import('apify-client');
-//   return new ApifyClient({ token: process.env.APIFY_TOKEN || '' });
-// }
+async function getApifyClient() {
+  const { ApifyClient } = await import('apify-client');
+  return new ApifyClient({ token: process.env.APIFY_TOKEN || '' });
+}
 
 type GooglePlace = {
   place_id: string;
@@ -108,32 +108,50 @@ export async function getPracticeDetails(place_id: string): Promise<PracticeDeta
   return details;
 }
 
-// Apify dataset item minimal shape (kept for commented-out Apify implementation)
-// interface ApifyReviewItem {
-//   reviewText?: string;
-//   text?: string;
-//   review?: string;
-//   stars?: number;
-//   rating?: number;
-//   publishedAtDate?: string;
-//   reviewDate?: string;
-// }
+// Apify dataset item minimal shape
+interface ApifyReviewItem {
+  reviewText?: string;
+  text?: string;
+  review?: string;
+  stars?: number;
+  rating?: number;
+  publishedAtDate?: string;
+  reviewDate?: string;
+}
 
-// Fetch Google Maps reviews via SerpApi (primary), Outscraper as backup
+// Fetch Google Maps reviews via SerpApi (primary), Outscraper, then Apify as fallbacks
 export async function getPracticeReviews(place_id: string): Promise<Review[]> {
   // 1. Try SerpApi first
   try {
     const t0 = Date.now();
     const reviews = await fetchReviewsSerpApi(place_id, 100);
     console.log(`[timing] SerpApi: ${Date.now() - t0}ms (${reviews.length} reviews)`);
-    if (reviews.length > 0) return reviews;
+    if (reviews.length > 0) {
+      console.log('[reviews] source: SerpApi');
+      return reviews;
+    }
     console.warn('[serpapi] returned 0 reviews — falling back to Outscraper');
   } catch (err) {
     console.warn(`[serpapi] failed: ${err} — falling back to Outscraper`);
   }
 
   // 2. Fall back to Outscraper
-  return getPracticeReviewsOutscraper(place_id);
+  try {
+    const reviews = await getPracticeReviewsOutscraper(place_id);
+    if (reviews.length > 0) {
+      console.log('[reviews] source: Outscraper');
+      return reviews;
+    }
+    console.warn('[outscraper] returned 0 reviews — falling back to Apify');
+  } catch (err) {
+    console.warn(`[outscraper] failed: ${err} — falling back to Apify`);
+  }
+
+  // 3. Last resort: Apify
+  console.log('[reviews] source: Apify (final fallback)');
+  const apifyReviews = await getPracticeReviewsApify(place_id);
+  console.log(`[apify] fetched ${apifyReviews.length} reviews`);
+  return apifyReviews;
 }
 
 // Outscraper backup (swap in if SerpApi is unavailable)
@@ -186,32 +204,32 @@ async function getPracticeReviewsOutscraper(place_id: string): Promise<Review[]>
   return reviews;
 }
 
-// Apify implementation (commented out — replaced by Outscraper)
-// export async function getPracticeReviewsApify(place_id: string): Promise<Review[]> {
-//   const details = (await getPracticeDetails(place_id)) as PracticeDetailsWithUrl;
-//   const mapsUrl = details.maps_url;
-//   if (!mapsUrl) throw new Error('Google Maps URL not available for this place');
-//   const token = process.env.APIFY_TOKEN || '';
-//   if (!token) throw new Error('APIFY_TOKEN is not set');
-//   const client = await getApifyClient();
-//   const input = {
-//     startUrls: [{ url: mapsUrl }],
-//     maxReviews: 100,
-//     reviewsSort: 'newest',
-//     language: 'en',
-//     reviewsOrigin: 'all',
-//     personalData: true,
-//   } as Record<string, unknown>;
-//   const run = await client.actor('Xb8osYTtOjlsgI6k9').call(input);
-//   const { items } = await client.dataset(run.defaultDatasetId).listItems();
-//   return (items as ApifyReviewItem[] | undefined || [])
-//     .map((it) => ({
-//       text: (it.reviewText || it.text || it.review || '').toString(),
-//       date: it.publishedAtDate || it.reviewDate || undefined,
-//       stars: it.stars ?? it.rating ?? undefined,
-//     }))
-//     .filter((r) => r.text && r.text.trim().length > 0);
-// }
+// Apify fallback (third resort after SerpApi and Outscraper)
+async function getPracticeReviewsApify(place_id: string): Promise<Review[]> {
+  const details = (await getPracticeDetails(place_id)) as PracticeDetailsWithUrl;
+  const mapsUrl = details.maps_url;
+  if (!mapsUrl) throw new Error('Google Maps URL not available for this place');
+  const token = process.env.APIFY_TOKEN || '';
+  if (!token) throw new Error('APIFY_TOKEN is not set');
+  const client = await getApifyClient();
+  const input = {
+    startUrls: [{ url: mapsUrl }],
+    maxReviews: 100,
+    reviewsSort: 'newest',
+    language: 'en',
+    reviewsOrigin: 'all',
+    personalData: true,
+  } as Record<string, unknown>;
+  const run = await client.actor('Xb8osYTtOjlsgI6k9').call(input);
+  const { items } = await client.dataset(run.defaultDatasetId).listItems();
+  return (items as ApifyReviewItem[] | undefined || [])
+    .map((it) => ({
+      text: (it.reviewText || it.text || it.review || '').toString(),
+      date: it.publishedAtDate || it.reviewDate || undefined,
+      stars: it.stars ?? it.rating ?? undefined,
+    }))
+    .filter((r) => r.text && r.text.trim().length > 0);
+}
 
 export async function analyzeSingleReview(text: string): Promise<AnalysisResults> {
   const sentiment = await callSentiment([text]);
