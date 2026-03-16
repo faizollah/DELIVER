@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 interface ReviewLimitSelectorProps {
@@ -13,6 +13,11 @@ export default function ReviewLimitSelector({ reviewCount, totalReviews, current
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(false);
+
+  // Reset loading when new results arrive (currentLimit prop changes to the selected value)
+  useEffect(() => {
+    setLoading(false);
+  }, [currentLimit]);
 
   // Build options: 100, 200, 300, ... up to totalReviews, then "All"
   const options: { label: string; value: number }[] = [];
