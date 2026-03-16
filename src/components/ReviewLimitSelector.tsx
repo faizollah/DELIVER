@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 interface ReviewLimitSelectorProps {
@@ -11,6 +12,7 @@ interface ReviewLimitSelectorProps {
 export default function ReviewLimitSelector({ reviewCount, totalReviews, currentLimit }: ReviewLimitSelectorProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const [loading, setLoading] = useState(false);
 
   // Build options: 100, 200, 300, ... up to totalReviews, then "All"
   const options: { label: string; value: number }[] = [];
@@ -22,8 +24,21 @@ export default function ReviewLimitSelector({ reviewCount, totalReviews, current
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setLoading(true);
     router.push(`${pathname}?limit=${e.target.value}`);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 mt-4 text-sm text-slate-500">
+        <svg className="animate-spin h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+        </svg>
+        <span>Fetching reviews, please wait...</span>
+      </div>
+    );
+  }
 
   if (options.length <= 1) {
     return (
