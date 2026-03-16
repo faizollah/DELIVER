@@ -1,6 +1,7 @@
 import { getPracticeDetails, getPracticeReviews, analyzePracticeReviews, analyzeSentimentBatch } from '@/app/actions';
 import Header from '@/components/Header';
 import PracticeAnalysis from '@/components/PracticeAnalysis';
+import ReviewLimitSelector from '@/components/ReviewLimitSelector';
 import { AggregatedResults, Review } from '@/lib/types';
 import React from 'react';
 
@@ -12,16 +13,22 @@ function aggregateSentiment(sentimentBatch: [number, { sentiment: string; confid
     return sentimentCounts;
 }
 
-interface PracticeAnalysisPageProps { params: Promise<{ place_id: string }> }
+interface PracticeAnalysisPageProps {
+  params: Promise<{ place_id: string }>;
+  searchParams: Promise<{ limit?: string }>;
+}
 
-export default async function PracticeAnalysisPage({ params }: PracticeAnalysisPageProps) {
+export default async function PracticeAnalysisPage({ params, searchParams }: PracticeAnalysisPageProps) {
   const { place_id } = await params;
-  const details = await getPracticeDetails(place_id);
+  const { limit: limitParam } = await searchParams;
+  const limit = limitParam ? parseInt(limitParam, 10) : 100;
 
-  // Fetch more reviews via Apify (fallback handled in actions)
+  const details = await getPracticeDetails(place_id);
+  const totalReviews = details.user_ratings_total ?? 0;
+
   let reviews: Review[] = [];
   try {
-    reviews = await getPracticeReviews(place_id);
+    reviews = await getPracticeReviews(place_id, limit);
   } catch {
     reviews = [];
   }
@@ -53,7 +60,14 @@ export default async function PracticeAnalysisPage({ params }: PracticeAnalysisP
           <h2 className="text-3xl font-bold text-center mb-2">{details.name}</h2>
           <p className="text-center text-slate-600">{details.formatted_address}</p>
           {reviews.length > 0 ? (
-            <AnalysisComp analysisResults={aggregatedResults} reviews={reviews} />
+            <>
+              <ReviewLimitSelector
+                reviewCount={reviews.length}
+                totalReviews={totalReviews}
+                currentLimit={limit}
+              />
+              <AnalysisComp analysisResults={aggregatedResults} reviews={reviews} />
+            </>
           ) : (
             <p className="text-center text-gray-600">No reviews found for this practice.</p>
           )}

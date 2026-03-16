@@ -89,7 +89,7 @@ export async function getPracticeDetails(place_id: string): Promise<PracticeDeta
   const params = {
     place_id,
     // Include the Google Maps URL so Apify can use it
-    fields: 'name,formatted_address,url',
+    fields: 'name,formatted_address,url,rating,user_ratings_total',
     key: process.env.GOOGLE_PLACES_API_KEY,
     language: 'en',
   };
@@ -120,11 +120,11 @@ interface ApifyReviewItem {
 }
 
 // Fetch Google Maps reviews via SerpApi (primary), Outscraper, then Apify as fallbacks
-export async function getPracticeReviews(place_id: string): Promise<Review[]> {
+export async function getPracticeReviews(place_id: string, limit = 100): Promise<Review[]> {
   // 1. Try SerpApi first
   try {
     const t0 = Date.now();
-    const reviews = await fetchReviewsSerpApi(place_id, 100);
+    const reviews = await fetchReviewsSerpApi(place_id, limit);
     console.log(`[timing] SerpApi: ${Date.now() - t0}ms (${reviews.length} reviews)`);
     if (reviews.length > 0) {
       console.log('[reviews] source: SerpApi');
