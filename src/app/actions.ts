@@ -19,9 +19,9 @@ import {
 const http = axios.create({ timeout: 30000 });
 
 // const SENTIMENT_URL = 'http://173.249.57.169:8081/predict';
-const SENTIMENT_URL = 'https://ohgoojezganoqm-8080.proxy.runpod.net/predict';
+const SENTIMENT_URL = 'https://jbhq4ghigzq0m9-8080.proxy.runpod.net/predict';
 // const TOPICS_URL = 'http://173.249.57.169:8082/predict';
-const TOPICS_URL = 'https://1afotp7vft4524-8080.proxy.runpod.net/predict';
+const TOPICS_URL = 'https://tkbfeyk3royapa-8080.proxy.runpod.net/predict';
 
 const OUTSCRAPER_REVIEWS_URL = 'https://api.app.outscraper.com/maps/reviews-v3';
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
