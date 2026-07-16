@@ -9,7 +9,6 @@ trends over time, topic co-occurrence, and keyword extraction).
 
 > **Note on scope.** This repository contains the web application only. The
 > sentiment and theme-classifier models are served from separate GPU inference
-> endpoints and are **not** included here (see [Models](#models)).
 
 <!-- TODO: add a screenshot or short GIF of the practice-analysis dashboard. -->
 
@@ -27,14 +26,12 @@ trends over time, topic co-occurrence, and keyword extraction).
 - Interactive dashboard: overall sentiment, per-theme coverage/intensity,
   sentiment-by-theme breakdown, monthly sentiment trend, theme co-occurrence,
   and keyword extraction, with click-to-filter by sentiment.
-- Single-review analysis mode for ad-hoc text.
 
 ## Tech stack
 
 - **Framework:** Next.js (App Router, React Server Components, Server Actions) + TypeScript
 - **UI / charts:** Tailwind CSS, Chart.js (`react-chartjs-2`)
-- **Data:** Prisma ORM + PostgreSQL (review cache + sentiment log)
-- **Review providers:** SerpApi (primary) → Outscraper → Apify (fallback chain), Google Places API
+- **Review providers:** SerpApi (primary), Google Places API
 - **Inference:** external HTTP model endpoints (sentiment + theme classifier)
 - **Deployment:** Vercel
 
@@ -50,12 +47,11 @@ Browser
   │     └── callTopics / classifyTexts              ── Theme endpoint      /predict
   │
   ├── API routes (src/app/api/*)  ── chunked client-side classification
-  └── Prisma  ── PostgreSQL (ReviewCache, SentimentLog)
 ```
 
 Key modules:
 
-- `src/app/actions.ts` — server actions: review fetching, model calls, aggregation.
+- `src/app/actions.ts` — server actions: model calls, aggregation.
 - `src/lib/reviewProviders.ts` — SerpApi review fetching.
 - `src/lib/themes.ts` — theme taxonomy and response processing/aggregation.
 - `src/components/` — dashboard and chart components.
@@ -66,7 +62,6 @@ Key modules:
 ### Prerequisites
 
 - Node.js 18.17+ (or 20+)
-- A PostgreSQL database
 - API keys for the review providers (see below)
 - Two reachable model inference endpoints (sentiment + theme classifier)
 
