@@ -19,9 +19,9 @@ import {
 const http = axios.create({ timeout: 30000 });
 
 // const SENTIMENT_URL = 'http://173.249.57.169:8081/predict';
-const SENTIMENT_URL = 'https://jbhq4ghigzq0m9-8080.proxy.runpod.net/predict';
+const SENTIMENT_URL = 'https://ev92e6tqqdwxyr-8080.proxy.runpod.net/predict';
 // const TOPICS_URL = 'http://173.249.57.169:8082/predict';
-const TOPICS_URL = 'https://tkbfeyk3royapa-8080.proxy.runpod.net/predict';
+const TOPICS_URL = 'https://lxgh7o4hp4kebv-8080.proxy.runpod.net/predict';
 
 const OUTSCRAPER_REVIEWS_URL = 'https://api.app.outscraper.com/maps/reviews-v3';
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -330,7 +330,7 @@ async function callSentiment(texts: string[]): Promise<SentimentAPIResult[]> {
 
 async function callTopics(texts: string[]): Promise<TopicsAPIResult[]> {
   try {
-    const { data } = await http.post(TOPICS_URL, { texts, threshold: 0.3 }, { timeout: 20000 });
+    const { data } = await http.post(TOPICS_URL, { texts }, { timeout: 20000 });
     return data.results as TopicsAPIResult[];
   } catch {
     throw new Error('Classification service is unavailable.');

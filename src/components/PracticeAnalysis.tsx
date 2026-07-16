@@ -358,8 +358,8 @@ export default function PracticeAnalysis({ analysisResults, reviews }: PracticeA
         <h4 className="mb-2 text-sm font-semibold text-slate-700">Interpreting intensity (confidence)</h4>
         <p className="text-sm text-slate-800">By trusting the model as a reasonably trained expert, its confidence can act as a proxy for the clarity and strength of the signal in your data.</p>
         <ul className="mt-2 text-sm text-slate-700 list-disc pl-5 space-y-1">
-          <li><span className="font-medium">High average confidence</span> (e.g., 90% for Staff Interaction): language is direct and unambiguous—the signal is strong.</li>
-          <li><span className="font-medium">Low average confidence</span> (e.g., 30% for Cost and Value): language is vague/indirect—the signal is weak or mixed.</li>
+          <li><span className="font-medium">High average confidence</span> (e.g., 90% for Staff and Service Quality): language is direct and unambiguous—the signal is strong.</li>
+          <li><span className="font-medium">Low average confidence</span> (e.g., 30% for NHS and Private Care): language is vague/indirect—the signal is weak or mixed.</li>
           <li><span className="font-medium">Prominence and priorities</span>: compare scores to see what patients are “shouting” about versus “murmuring” about.</li>
           <li><span className="font-medium">Per‑review reading</span>: one label at ~95% is a focused review; many labels around 40–50% suggests a broader, less focused review.</li>
         </ul>
