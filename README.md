@@ -11,8 +11,9 @@ trends over time, topic co-occurrence, and keyword extraction).
 > sentiment and theme-classifier models are served from separate GPU inference
 > endpoints.
 >
-> <img width="500" alt="untitled" src="https://github.com/user-attachments/assets/33ee7c2f-6e1a-4c82-b1ad-72865129b28e" />
-
+<p align="center">
+  <img width="500" alt="untitled" src="https://github.com/user-attachments/assets/33ee7c2f-6e1a-4c82-b1ad-72865129b28e" />
+</p>
 
 ## Features
 
