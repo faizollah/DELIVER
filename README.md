@@ -11,8 +11,6 @@ trends over time, topic co-occurrence, and keyword extraction).
 > sentiment and theme-classifier models are served from separate GPU inference
 > endpoints.
 
-<!-- TODO: add a screenshot or short GIF of the practice-analysis dashboard. -->
-
 ## Features
 
 - Search for a dental practice and fetch its public Google Maps reviews.
@@ -131,19 +129,12 @@ individuals. If you deploy or reuse it:
 
 If you use this software, please cite it using the metadata in
 [`CITATION.cff`](./CITATION.cff).
-<!-- TODO: add the Figshare DOI once minted. -->
 
 ## Funding & acknowledgements
 
-<!-- TODO: confirm the exact wording and grant number with your project office. -->
-This work was carried out as part of the **DELIVER** project. This project has
-received funding from the European Union's Horizon Europe research and
-innovation programme under grant agreement No **[GRANT NUMBER]**.
-
-<!-- TODO: confirm the copyright holder / participating institutions. -->
+This work was carried out as part of the **DELIVER** project. The project is funded by the European Commission’s Horizon Europe Scheme (reference 101057077), and involvement of the
+University of Manchester in this project is funded by the UKRI Innovate UK Horizon Guarantee scheme (reference 10048830).
 
 ## License
 
 Released under the [MIT License](./LICENSE).
-<!-- TODO: confirm MIT is the intended licence and set the correct copyright
-     holder (e.g. the coordinating institution or the consortium). -->
