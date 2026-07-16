@@ -1,0 +1,28 @@
+# This CITATION.cff file provides citation metadata for this repository.
+# Learn more: https://citation-file-format.github.io/
+# TODO: fill in the placeholders (authors, DOI, version, date) before release.
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "DELIVER — Dental Practice Review Analysis"
+abstract: >-
+  A web application that collects public patient reviews of dental practices
+  and analyses them with sentiment and multi-label theme classifiers,
+  presenting the results as an interactive dashboard.
+type: software
+authors:
+  - given-names: "[FIRST NAME]"
+    family-names: "[LAST NAME]"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+    # affiliation: "[INSTITUTION]"
+# repository-code: "https://github.com/faizollah/deliver"
+# url: "https://github.com/faizollah/deliver"
+license: MIT
+version: "0.1.0"
+# doi: "10.6084/m9.figshare.XXXXXXXX"   # Figshare DOI, once minted
+# date-released: "2026-01-01"
+keywords:
+  - dental care
+  - patient reviews
+  - sentiment analysis
+  - text classification
+  - natural language processing

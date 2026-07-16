@@ -18,9 +18,7 @@ import {
 // const http = axios.create({ timeout: 10000 });
 const http = axios.create({ timeout: 30000 });
 
-// const SENTIMENT_URL = 'http://173.249.57.169:8081/predict';
 const SENTIMENT_URL = 'https://ev92e6tqqdwxyr-8080.proxy.runpod.net/predict';
-// const TOPICS_URL = 'http://173.249.57.169:8082/predict';
 const TOPICS_URL = 'https://lxgh7o4hp4kebv-8080.proxy.runpod.net/predict';
 
 const OUTSCRAPER_REVIEWS_URL = 'https://api.app.outscraper.com/maps/reviews-v3';
