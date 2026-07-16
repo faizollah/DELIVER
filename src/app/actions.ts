@@ -17,9 +17,6 @@ import {
 // const http = axios.create({ timeout: 10000 });
 const http = axios.create({ timeout: 30000 });
 
-const SENTIMENT_URL = 'https://ev92e6tqqdwxyr-8080.proxy.runpod.net/predict';
-const TOPICS_URL = 'https://lxgh7o4hp4kebv-8080.proxy.runpod.net/predict';
-
 const OUTSCRAPER_REVIEWS_URL = 'https://api.app.outscraper.com/maps/reviews-v3';
 
 // type OutscraperReview = { review_text?: string; snippet?: string; text?: string };
@@ -279,8 +276,10 @@ export async function analyzePracticeReviews(reviews: Review[]): Promise<{
 }
 
 async function callSentiment(texts: string[]): Promise<SentimentAPIResult[]> {
+  const url = process.env.SENTIMENT_URL;
+  if (!url) throw new Error('SENTIMENT_URL is not set');
   try {
-    const { data } = await http.post(SENTIMENT_URL, { texts }, { timeout: 15000 });
+    const { data } = await http.post(url, { texts }, { timeout: 15000 });
     return data.results as SentimentAPIResult[];
   } catch {
     throw new Error('Sentiment service is unavailable.');
@@ -288,8 +287,10 @@ async function callSentiment(texts: string[]): Promise<SentimentAPIResult[]> {
 }
 
 async function callTopics(texts: string[]): Promise<TopicsAPIResult[]> {
+  const url = process.env.CLASSIFIER_URL;
+  if (!url) throw new Error('CLASSIFIER_URL is not set');
   try {
-    const { data } = await http.post(TOPICS_URL, { texts }, { timeout: 20000 });
+    const { data } = await http.post(url, { texts }, { timeout: 20000 });
     return data.results as TopicsAPIResult[];
   } catch {
     throw new Error('Classification service is unavailable.');

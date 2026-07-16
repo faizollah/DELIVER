@@ -97,6 +97,8 @@ hosting provider, or in a local `.env.local` file for development):
 | `SERPAPI_KEY` | Primary Google Maps reviews provider |
 | `OUTSCRAPER_API_KEY` | Fallback reviews provider |
 | `APIFY_TOKEN` | Second fallback reviews provider |
+| `SENTIMENT_URL` | Sentiment model endpoint (`POST /predict`) |
+| `CLASSIFIER_URL` | Theme-classifier model endpoint (`POST /predict`) |
 
 ## Models
 
@@ -109,8 +111,9 @@ that accepts `{ "texts": [...] }`:
   (one score per theme), `predicted_labels` (above a threshold, default `0.38`),
   and the `threshold` used.
 
-The endpoints are currently configured in `src/app/actions.ts`. The model
-weights and training code are not part of this repository.
+The endpoints are configured via the `SENTIMENT_URL` and `CLASSIFIER_URL`
+environment variables (see [Environment variables](#environment-variables)).
+The model weights and training code are not part of this repository.
 <!-- TODO: link to the archived model artifacts / training code (e.g. a
      separate Figshare/Zenodo record) so the pipeline is reproducible. -->
 
