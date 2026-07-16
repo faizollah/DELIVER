@@ -4,12 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
-    "@prisma/client": "^6.13.0",
     "apify-client": "^2.9.1",
     "axios": "^1.11.0",
     "chart.js": "^4.5.0",
@@ -27,7 +26,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.4.8",
-    "prisma": "^6.13.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

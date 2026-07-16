@@ -9,6 +9,7 @@ trends over time, topic co-occurrence, and keyword extraction).
 
 > **Note on scope.** This repository contains the web application only. The
 > sentiment and theme-classifier models are served from separate GPU inference
+> endpoints.
 
 <!-- TODO: add a screenshot or short GIF of the practice-analysis dashboard. -->
 
@@ -35,6 +36,9 @@ trends over time, topic co-occurrence, and keyword extraction).
 - **Inference:** external HTTP model endpoints (sentiment + theme classifier)
 - **Deployment:** Vercel
 
+The application is **stateless** — it does not use a database and does not
+persist reviews or model outputs; each request is processed in-memory.
+
 ## Architecture
 
 ```
@@ -46,7 +50,7 @@ Browser
   │     ├── callSentiment                           ── Sentiment endpoint  /predict
   │     └── callTopics / classifyTexts              ── Theme endpoint      /predict
   │
-  ├── API routes (src/app/api/*)  ── chunked client-side classification
+  └── API routes (src/app/api/*)  ── chunked client-side classification
 ```
 
 Key modules:
@@ -55,7 +59,6 @@ Key modules:
 - `src/lib/reviewProviders.ts` — SerpApi review fetching.
 - `src/lib/themes.ts` — theme taxonomy and response processing/aggregation.
 - `src/components/` — dashboard and chart components.
-- `prisma/schema.prisma` — `ReviewCache` and `SentimentLog` models.
 
 ## Getting started
 
@@ -72,14 +75,10 @@ Key modules:
 npm install
 
 # 2. Configure environment
-cp .env.example .env.local
-# then edit .env.local and fill in the values
+#    Set the required variables (see "Environment variables" below) in a
+#    .env.local file for local development, or in your hosting provider.
 
-# 3. Generate the Prisma client and create the schema
-npx prisma generate
-npx prisma db push
-
-# 4. Run the dev server
+# 3. Run the dev server
 npm run dev
 ```
 
@@ -87,7 +86,8 @@ Open <http://localhost:3000>.
 
 ### Environment variables
 
-See [`.env.example`](./.env.example) for the full list. Required:
+Set the following (for example, as project environment variables in your
+hosting provider, or in a local `.env.local` file for development):
 
 | Variable | Purpose |
 | --- | --- |
@@ -95,7 +95,6 @@ See [`.env.example`](./.env.example) for the full list. Required:
 | `SERPAPI_KEY` | Primary Google Maps reviews provider |
 | `OUTSCRAPER_API_KEY` | Fallback reviews provider |
 | `APIFY_TOKEN` | Second fallback reviews provider |
-| `POSTGRES_PRISMA_URL` | PostgreSQL connection string (Prisma) |
 
 ## Models
 
@@ -119,12 +118,12 @@ This application processes **public patient reviews**, which may contain
 personal data and personal opinions about identifiable practices and
 individuals. If you deploy or reuse it:
 
+- The application does not persist review text or model outputs; analysis is
+  performed in-memory per request. If you add any logging or storage, apply
+  data minimisation and retention limits accordingly.
 - Process review data only for legitimate research purposes and in line with
   the platform terms of the review sources and applicable data-protection law
   (e.g. UK GDPR / EU GDPR).
-- Note that `SentimentLog` persists raw review text alongside its predicted
-  sentiment. Consider disabling this, anonymising input, or applying data
-  minimisation/retention limits before any production or shared deployment.
 - Do not use model outputs to make consequential decisions about identifiable
   individuals without appropriate review.
 

@@ -1,7 +1,6 @@
 'use server';
 
 import axios from 'axios';
-import prisma from '@/lib/prisma';
 import { fetchReviewsSerpApi } from '@/lib/reviewProviders';
 import { processClassifierResponse, aggregatePracticeThemes, createEmptyThemeMap, ThemeResult } from '@/lib/themes';
 import {
@@ -22,7 +21,6 @@ const SENTIMENT_URL = 'https://ev92e6tqqdwxyr-8080.proxy.runpod.net/predict';
 const TOPICS_URL = 'https://lxgh7o4hp4kebv-8080.proxy.runpod.net/predict';
 
 const OUTSCRAPER_REVIEWS_URL = 'https://api.app.outscraper.com/maps/reviews-v3';
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // type OutscraperReview = { review_text?: string; snippet?: string; text?: string };
 // type OutscraperResponseItem = { reviews_data?: OutscraperReview[] };
@@ -154,20 +152,7 @@ export async function getPracticeReviews(place_id: string, limit = 100): Promise
 
 // Outscraper backup (swap in if SerpApi is unavailable)
 async function getPracticeReviewsOutscraper(place_id: string): Promise<Review[]> {
-  // 1. Check DB cache first
-  try {
-    const cached = await prisma.reviewCache.findUnique({ where: { placeId: place_id } });
-    if (cached) {
-      const ageMs = Date.now() - cached.cachedAt.getTime();
-      if (ageMs < CACHE_TTL_MS) {
-        return cached.reviews as unknown as Review[];
-      }
-    }
-  } catch {
-    // DB unavailable — proceed to scrape
-  }
-
-  // 2. Fetch from Outscraper
+  // Fetch from Outscraper
   const apiKey = process.env.OUTSCRAPER_API_KEY || '';
   if (!apiKey) throw new Error('OUTSCRAPER_API_KEY is not set');
 
@@ -187,17 +172,6 @@ async function getPracticeReviewsOutscraper(place_id: string): Promise<Review[]>
       stars: it.rating ?? it.stars ?? undefined,
     }))
     .filter((r) => r.text && r.text.trim().length > 0);
-
-  // 3. Store in DB cache (non-fatal if it fails)
-  try {
-    await prisma.reviewCache.upsert({
-      where: { placeId: place_id },
-      update: { reviews: reviews as object[], cachedAt: new Date() },
-      create: { placeId: place_id, reviews: reviews as object[] },
-    });
-  } catch {
-    // Continue without caching
-  }
 
   return reviews;
 }
@@ -254,19 +228,6 @@ export async function analyzeSingleReview(text: string): Promise<AnalysisResults
     themeProbabilities: themeResult.themeProbabilities,
     threshold: themeResult.threshold,
   };
-
-  // Best-effort logging: ignore DB errors in serverless env
-  try {
-    await prisma.sentimentLog.create({
-      data: {
-        inputText: text,
-        sentiment: sentimentResult.sentiment,
-        confidence: sentimentResult.confidence,
-      },
-    });
-  } catch {
-    console.warn('Skipping DB log (not configured or unavailable).');
-  }
 
   return { sentimentResult, multilabelResult };
 }
